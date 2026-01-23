@@ -8,11 +8,29 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
     <div id="root"></div>
     
     <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+          apiKey: "AIzaSyAxqJDTt5LPqfWTyxnTv_A5fe-34ULhMpw",
+          authDomain: "developmentplanning-d0761.firebaseapp.com",
+          projectId: "developmentplanning-d0761",
+          storageBucket: "developmentplanning-d0761.firebasestorage.app",
+          messagingSenderId: "811254392085",
+          appId: "1:811254392085:web:5c5cec61391ec0fcae751c",
+          measurementId: "G-GJL4BPD36T"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
         const { useState, useEffect } = React;
         
         const Plus = ({ size = 24 }) => {
@@ -60,7 +78,25 @@
             );
         };
 
+        const Cloud = ({ size = 24 }) => {
+            return React.createElement('svg', {
+                width: size,
+                height: size,
+                viewBox: '0 0 24 24',
+                fill: 'none',
+                stroke: 'currentColor',
+                strokeWidth: '2'
+            },
+                React.createElement('path', { d: 'M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z' })
+            );
+        };
+
         const ResourcePlanning = () => {
+          const [loading, setLoading] = useState(true);
+          const [saving, setSaving] = useState(false);
+          const [lastSaved, setLastSaved] = useState(null);
+          const [syncStatus, setSyncStatus] = useState('disconnected');
+          
           const generateSprints = () => {
             const sprints = [];
             const startDate = new Date('2024-12-29');
@@ -82,36 +118,79 @@
             return sprints;
           };
 
-          const loadData = () => {
-            try {
-              const savedSprints = JSON.parse(localStorage.getItem('resourcePlanningSprints') || 'null');
-              const savedItems = JSON.parse(localStorage.getItem('resourcePlanningItems') || 'null');
-              
-              return {
-                sprints: savedSprints || generateSprints(),
-                items: savedItems || [{ name: '', allocations: {} }]
-              };
-            } catch (e) {
-              return {
-                sprints: generateSprints(),
-                items: [{ name: '', allocations: {} }]
-              };
-            }
-          };
-
-          const initialData = loadData();
-          const [sprints, setSprints] = useState(initialData.sprints);
-          const [developmentItems, setDevelopmentItems] = useState(initialData.items);
+          const [sprints, setSprints] = useState(generateSprints());
+          const [developmentItems, setDevelopmentItems] = useState([{ name: '', allocations: {} }]);
           const chartRef = React.useRef(null);
           const chartInstance = React.useRef(null);
+          const saveTimeoutRef = React.useRef(null);
 
+          // Load data from Firebase on mount
           useEffect(() => {
-            localStorage.setItem('resourcePlanningSprints', JSON.stringify(sprints));
-          }, [sprints]);
+            const loadData = async () => {
+              setLoading(true);
+              setSyncStatus('loading');
+              
+              try {
+                const doc = await db.collection('resourcePlanning').doc('mainData').get();
+                
+                if (doc.exists) {
+                  const data = doc.data();
+                  if (data.sprints) setSprints(data.sprints);
+                  if (data.developmentItems) setDevelopmentItems(data.developmentItems);
+                  if (data.lastSaved) setLastSaved(new Date(data.lastSaved));
+                  setSyncStatus('synced');
+                } else {
+                  setSyncStatus('synced');
+                }
+              } catch (error) {
+                console.error('Error loading data:', error);
+                setSyncStatus('error');
+              }
+              
+              setLoading(false);
+            };
+            
+            loadData();
+          }, []);
 
+          // Auto-save to Firebase whenever data changes
           useEffect(() => {
-            localStorage.setItem('resourcePlanningItems', JSON.stringify(developmentItems));
-          }, [developmentItems]);
+            if (loading) return;
+            
+            if (saveTimeoutRef.current) {
+              clearTimeout(saveTimeoutRef.current);
+            }
+            
+            setSyncStatus('saving');
+            
+            saveTimeoutRef.current = setTimeout(async () => {
+              setSaving(true);
+              
+              try {
+                const data = {
+                  sprints,
+                  developmentItems,
+                  lastSaved: new Date().toISOString()
+                };
+                
+                await db.collection('resourcePlanning').doc('mainData').set(data);
+                
+                setLastSaved(new Date());
+                setSyncStatus('synced');
+              } catch (error) {
+                console.error('Error saving data:', error);
+                setSyncStatus('error');
+              }
+              
+              setSaving(false);
+            }, 1000);
+            
+            return () => {
+              if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+              }
+            };
+          }, [sprints, developmentItems, loading]);
 
           const itemColors = [
             '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
@@ -192,12 +271,25 @@
             a.click();
           };
 
-          const clearAllData = () => {
-            if (window.confirm('Are you sure you want to clear all data? This cannot be undone.')) {
-              localStorage.removeItem('resourcePlanningSprints');
-              localStorage.removeItem('resourcePlanningItems');
-              setSprints(generateSprints());
-              setDevelopmentItems([{ name: '', allocations: {} }]);
+          const clearAllData = async () => {
+            if (window.confirm('Are you sure you want to clear all data? This cannot be undone and will affect all users.')) {
+              const defaultSprints = generateSprints();
+              const defaultItems = [{ name: '', allocations: {} }];
+              
+              setSprints(defaultSprints);
+              setDevelopmentItems(defaultItems);
+              
+              try {
+                await db.collection('resourcePlanning').doc('mainData').set({
+                  sprints: defaultSprints,
+                  developmentItems: defaultItems,
+                  lastSaved: new Date().toISOString()
+                });
+                setSyncStatus('synced');
+              } catch (error) {
+                console.error('Error clearing data:', error);
+                setSyncStatus('error');
+              }
             }
           };
 
@@ -210,7 +302,6 @@
 
             const datasets = [];
             
-            // Capacity dataset
             datasets.push({
               label: 'Capacity',
               data: sprints.map(s => s.capacity),
@@ -218,7 +309,6 @@
               stack: 'bg'
             });
 
-            // Item datasets
             developmentItems.forEach((item, idx) => {
               if (item.name) {
                 datasets.push({
@@ -244,9 +334,7 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                  x: {
-                    stacked: true,
-                  },
+                  x: { stacked: true },
                   y: {
                     stacked: true,
                     title: {
@@ -271,10 +359,47 @@
             };
           }, [sprints, developmentItems]);
 
+          const getSyncStatusColor = () => {
+            switch(syncStatus) {
+              case 'synced': return 'text-green-600';
+              case 'saving': return 'text-blue-600';
+              case 'loading': return 'text-blue-600';
+              case 'error': return 'text-red-600';
+              default: return 'text-gray-600';
+            }
+          };
+
+          const getSyncStatusText = () => {
+            switch(syncStatus) {
+              case 'synced': return lastSaved ? `Synced - Last saved: ${lastSaved.toLocaleTimeString()}` : 'Synced';
+              case 'saving': return 'Saving...';
+              case 'loading': return 'Loading...';
+              case 'error': return 'Sync error - changes saved locally';
+              default: return 'Disconnected';
+            }
+          };
+
+          if (loading) {
+            return React.createElement('div', { 
+              className: 'flex items-center justify-center min-h-screen bg-gray-50' 
+            },
+              React.createElement('div', { className: 'text-center' },
+                React.createElement('div', { className: 'text-xl text-gray-600 mb-2' }, 'Loading from Firebase...'),
+                React.createElement('div', { className: 'text-sm text-gray-500' }, 'Syncing your data across devices')
+              )
+            );
+          }
+
           return React.createElement('div', { className: 'p-6 max-w-full mx-auto bg-gray-50 min-h-screen' },
             React.createElement('div', { className: 'bg-white rounded-lg shadow-lg p-6 mb-6' },
               React.createElement('div', { className: 'flex justify-between items-center mb-6' },
-                React.createElement('h1', { className: 'text-3xl font-bold text-gray-800' }, 'Sprint Resource Planning 2026'),
+                React.createElement('div', null,
+                  React.createElement('h1', { className: 'text-3xl font-bold text-gray-800' }, 'Sprint Resource Planning 2026'),
+                  React.createElement('div', { className: `flex items-center gap-2 text-sm mt-1 ${getSyncStatusColor()}` },
+                    React.createElement(Cloud, { size: 16 }),
+                    React.createElement('span', null, getSyncStatusText())
+                  )
+                ),
                 React.createElement('div', { className: 'flex gap-2' },
                   React.createElement('button', {
                     onClick: clearAllData,
@@ -296,6 +421,10 @@
                 React.createElement('p', { className: 'text-sm text-gray-700' },
                   React.createElement('strong', null, 'Default Sprint Capacity: '),
                   '13 Backend Developers x 10 days = 130 person-days per sprint'
+                ),
+                React.createElement('p', { className: 'text-xs text-gray-500 mt-2 flex items-center gap-1' },
+                  React.createElement(Cloud, { size: 14 }),
+                  '☁️ Your data is automatically saved to Firebase and synced across all devices'
                 )
               ),
               React.createElement('div', { className: 'overflow-x-auto' },
