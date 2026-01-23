@@ -99,22 +99,45 @@
           
           const generateSprints = () => {
             const sprints = [];
-            const startDate = new Date('2024-12-29');
+            const sprintData = [
+              { name: 'PTS26.02', start: '29.12.2025', end: '11.01.2026' },
+              { name: 'PTS26.04', start: '12.01.2026', end: '25.01.2026' },
+              { name: 'PTS26.06', start: '26.01.2026', end: '08.02.2026' },
+              { name: 'PTS26.08', start: '09.02.2026', end: '22.02.2026' },
+              { name: 'PTS26.10', start: '23.02.2026', end: '08.03.2026' },
+              { name: 'PTS26.12', start: '09.03.2026', end: '22.03.2026' },
+              { name: 'PTS26.14', start: '23.03.2026', end: '05.04.2026' },
+              { name: 'PTS26.16', start: '06.04.2026', end: '19.04.2026' },
+              { name: 'PTS26.18', start: '20.04.2026', end: '03.05.2026' },
+              { name: 'PTS26.20', start: '04.05.2026', end: '17.05.2026' },
+              { name: 'PTS26.22', start: '18.05.2026', end: '31.05.2026' },
+              { name: 'PTS26.24', start: '01.06.2026', end: '14.06.2026' },
+              { name: 'PTS26.26', start: '15.06.2026', end: '28.06.2026' },
+              { name: 'PTS26.28', start: '29.06.2026', end: '12.07.2026' },
+              { name: 'PTS26.30', start: '13.07.2026', end: '26.07.2026' },
+              { name: 'PTS26.32', start: '27.07.2026', end: '09.08.2026' },
+              { name: 'PTS26.34', start: '10.08.2026', end: '23.08.2026' },
+              { name: 'PTS26.36', start: '24.08.2026', end: '06.09.2026' },
+              { name: 'PTS26.38', start: '07.09.2026', end: '20.09.2026' },
+              { name: 'PTS26.40', start: '21.09.2026', end: '04.10.2026' },
+              { name: 'PTS26.42', start: '05.10.2026', end: '18.10.2026' },
+              { name: 'PTS26.44', start: '19.10.2026', end: '01.11.2026' },
+              { name: 'PTS26.46', start: '02.11.2026', end: '15.11.2026' },
+              { name: 'PTS26.48', start: '16.11.2026', end: '29.11.2026' },
+              { name: 'PTS26.50', start: '30.11.2026', end: '13.12.2026' },
+              { name: 'PTS26.52', start: '14.12.2026', end: '27.12.2026' }
+            ];
             
-            for (let i = 2; i <= 26; i += 2) {
-              const sprintStart = new Date(startDate);
-              sprintStart.setDate(startDate.getDate() + ((i - 2) / 2) * 14);
-              const sprintEnd = new Date(sprintStart);
-              sprintEnd.setDate(sprintStart.getDate() + 13);
-              
+            sprintData.forEach(sprint => {
               sprints.push({
-                name: `PTS26.${i.toString().padStart(2, '0')}`,
-                startDate: sprintStart.toLocaleDateString('de-DE'),
-                endDate: sprintEnd.toLocaleDateString('de-DE'),
-                period: `${sprintStart.toLocaleDateString('de-DE')} - ${sprintEnd.toLocaleDateString('de-DE')}`,
+                name: sprint.name,
+                startDate: sprint.start,
+                endDate: sprint.end,
+                period: `${sprint.start} - ${sprint.end}`,
                 capacity: 130
               });
-            }
+            });
+            
             return sprints;
           };
 
@@ -421,10 +444,6 @@
                 React.createElement('p', { className: 'text-sm text-gray-700' },
                   React.createElement('strong', null, 'Default Sprint Capacity: '),
                   '13 Backend Developers x 10 days = 130 person-days per sprint'
-                ),
-                React.createElement('p', { className: 'text-xs text-gray-500 mt-2 flex items-center gap-1' },
-                  React.createElement(Cloud, { size: 14 }),
-                  '☁️ Your data is automatically saved to Firebase and synced across all devices'
                 )
               ),
               React.createElement('div', { className: 'overflow-x-auto' },
