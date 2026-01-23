@@ -6,39 +6,59 @@
     <title>Sprint Resource Planning 2026</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/recharts@2.5.0/dist/Recharts.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
     <div id="root"></div>
-    <script type="text/babel">
+    
+    <script>
         const { useState, useEffect } = React;
-        const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = Recharts;
         
-        const Plus = ({ size = 24 }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-        );
+        const Plus = ({ size = 24 }) => {
+            return React.createElement('svg', {
+                width: size,
+                height: size,
+                viewBox: '0 0 24 24',
+                fill: 'none',
+                stroke: 'currentColor',
+                strokeWidth: '2'
+            }, 
+                React.createElement('line', { x1: '12', y1: '5', x2: '12', y2: '19' }),
+                React.createElement('line', { x1: '5', y1: '12', x2: '19', y2: '12' })
+            );
+        };
         
-        const Trash2 = ({ size = 24 }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                <line x1="10" y1="11" x2="10" y2="17"></line>
-                <line x1="14" y1="11" x2="14" y2="17"></line>
-            </svg>
-        );
+        const Trash2 = ({ size = 24 }) => {
+            return React.createElement('svg', {
+                width: size,
+                height: size,
+                viewBox: '0 0 24 24',
+                fill: 'none',
+                stroke: 'currentColor',
+                strokeWidth: '2'
+            },
+                React.createElement('polyline', { points: '3 6 5 6 21 6' }),
+                React.createElement('path', { d: 'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' }),
+                React.createElement('line', { x1: '10', y1: '11', x2: '10', y2: '17' }),
+                React.createElement('line', { x1: '14', y1: '11', x2: '14', y2: '17' })
+            );
+        };
         
-        const Download = ({ size = 24 }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-        );
+        const Download = ({ size = 24 }) => {
+            return React.createElement('svg', {
+                width: size,
+                height: size,
+                viewBox: '0 0 24 24',
+                fill: 'none',
+                stroke: 'currentColor',
+                strokeWidth: '2'
+            },
+                React.createElement('path', { d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' }),
+                React.createElement('polyline', { points: '7 10 12 15 17 10' }),
+                React.createElement('line', { x1: '12', y1: '15', x2: '12', y2: '3' })
+            );
+        };
 
         const ResourcePlanning = () => {
           const generateSprints = () => {
@@ -82,6 +102,8 @@
           const initialData = loadData();
           const [sprints, setSprints] = useState(initialData.sprints);
           const [developmentItems, setDevelopmentItems] = useState(initialData.items);
+          const chartRef = React.useRef(null);
+          const chartInstance = React.useRef(null);
 
           useEffect(() => {
             localStorage.setItem('resourcePlanningSprints', JSON.stringify(sprints));
@@ -125,18 +147,6 @@
               updated[itemIndex].allocations[sprintName] = numValue;
             }
             setDevelopmentItems(updated);
-          };
-
-          const getChartData = () => {
-            return sprints.map(sprint => {
-              const data = { sprint: sprint.name, capacity: sprint.capacity };
-              developmentItems.forEach((item) => {
-                if (item.name && item.allocations[sprint.name]) {
-                  data[item.name] = item.allocations[sprint.name];
-                }
-              });
-              return data;
-            });
           };
 
           const getSprintTotals = () => {
@@ -191,206 +201,228 @@
             }
           };
 
-          const chartData = getChartData();
           const sprintTotals = getSprintTotals();
           const itemTotals = getDevelopmentItemTotals();
 
-          return (
-            <div className="p-6 max-w-full mx-auto bg-gray-50 min-h-screen">
-              <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h1 className="text-3xl font-bold text-gray-800">Sprint Resource Planning 2026</h1>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={clearAllData}
-                      className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-                    >
-                      <Trash2 size={20} />
-                      Clear All Data
-                    </button>
-                    <button
-                      onClick={exportToCSV}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                    >
-                      <Download size={20} />
-                      Export CSV
-                    </button>
-                  </div>
-                </div>
+          // Update chart
+          useEffect(() => {
+            if (!chartRef.current) return;
 
-                <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-gray-700">
-                    <strong>Default Sprint Capacity:</strong> 13 Backend Developers x 10 days = 130 person-days per sprint
-                  </p>
-                </div>
+            const datasets = [];
+            
+            // Capacity dataset
+            datasets.push({
+              label: 'Capacity',
+              data: sprints.map(s => s.capacity),
+              backgroundColor: '#e5e7eb',
+              stack: 'bg'
+            });
 
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="bg-gray-100">
-                        <th className="border border-gray-300 px-4 py-2 text-left sticky left-0 bg-gray-100 z-10 min-w-[200px]">
-                          Development Item
-                        </th>
-                        {sprints.map((sprint, index) => (
-                          <th key={index} className="border border-gray-300 px-2 py-2 text-center min-w-[80px]">
-                            <div className="text-sm font-semibold">{sprint.name}</div>
-                            <div className="text-xs text-gray-600 font-normal">{sprint.startDate}</div>
-                            <div className="text-xs text-gray-600 font-normal">{sprint.endDate}</div>
-                          </th>
-                        ))}
-                        <th className="border border-gray-300 px-4 py-2 text-center sticky right-0 bg-gray-100 z-10 min-w-[100px]">
-                          Total Days
-                        </th>
-                        <th className="border border-gray-300 px-2 py-2 text-center sticky right-0 bg-gray-100 z-10 min-w-[60px]">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {developmentItems.map((item, itemIndex) => (
-                        <tr key={itemIndex} className="hover:bg-gray-50">
-                          <td className="border border-gray-300 px-4 py-2 sticky left-0 bg-white z-10">
-                            <div className="flex items-center gap-2">
-                              <div 
-                                className="w-4 h-4 rounded border border-gray-300 flex-shrink-0"
-                                style={{ backgroundColor: itemColors[itemIndex % itemColors.length] }}
-                              />
-                              <input
-                                type="text"
-                                value={item.name}
-                                onChange={(e) => updateDevelopmentItemName(itemIndex, e.target.value)}
-                                className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
-                                placeholder="Enter development item name"
-                              />
-                            </div>
-                          </td>
-                          {sprints.map((sprint, sprintIndex) => (
-                            <td key={sprintIndex} className="border border-gray-300 px-2 py-2">
-                              <input
-                                type="number"
-                                value={item.allocations[sprint.name] || ''}
-                                onChange={(e) => updateAllocation(itemIndex, sprint.name, e.target.value)}
-                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-center"
-                                placeholder="0"
-                                min="0"
-                                step="0.5"
-                              />
-                            </td>
-                          ))}
-                          <td className="border border-gray-300 px-4 py-2 text-center font-semibold sticky right-0 bg-white z-10">
-                            {itemTotals[itemIndex].toFixed(1)}
-                          </td>
-                          <td className="border border-gray-300 px-2 py-2 text-center sticky right-0 bg-white z-10">
-                            <button
-                              onClick={() => removeDevelopmentItem(itemIndex)}
-                              className="p-1 text-red-600 hover:bg-red-50 rounded"
-                              title="Delete development item"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                      <tr className="bg-gray-100 font-semibold">
-                        <td className="border border-gray-300 px-4 py-2 sticky left-0 bg-gray-100 z-10">
-                          Total Allocated
-                        </td>
-                        {sprints.map((sprint, index) => {
-                          const total = sprintTotals[sprint.name];
-                          const isOverCapacity = total > sprint.capacity;
-                          return (
-                            <td 
-                              key={index} 
-                              className={`border border-gray-300 px-2 py-2 text-center ${
-                                isOverCapacity ? 'bg-red-100 text-red-700' : 'bg-green-50 text-green-700'
-                              }`}
-                            >
-                              {total.toFixed(1)}
-                            </td>
-                          );
-                        })}
-                        <td className="border border-gray-300 px-4 py-2 sticky right-0 bg-gray-100 z-10"></td>
-                        <td className="border border-gray-300 px-2 py-2 sticky right-0 bg-gray-100 z-10"></td>
-                      </tr>
-                      <tr className="bg-gray-50">
-                        <td className="border border-gray-300 px-4 py-2 sticky left-0 bg-gray-50 z-10">
-                          Capacity
-                        </td>
-                        {sprints.map((sprint, index) => (
-                          <td key={index} className="border border-gray-300 px-2 py-2 text-center">
-                            <input
-                              type="number"
-                              value={sprint.capacity}
-                              onChange={(e) => updateSprintCapacity(index, e.target.value)}
-                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-center bg-white"
-                              min="0"
-                              step="1"
-                            />
-                          </td>
-                        ))}
-                        <td className="border border-gray-300 px-4 py-2 sticky right-0 bg-gray-50 z-10"></td>
-                        <td className="border border-gray-300 px-2 py-2 sticky right-0 bg-gray-50 z-10"></td>
-                      </tr>
-                      <tr className="bg-gray-50 font-semibold">
-                        <td className="border border-gray-300 px-4 py-2 sticky left-0 bg-gray-50 z-10">
-                          Remaining
-                        </td>
-                        {sprints.map((sprint, index) => {
-                          const remaining = sprint.capacity - sprintTotals[sprint.name];
-                          const isOverCapacity = remaining < 0;
-                          return (
-                            <td 
-                              key={index} 
-                              className={`border border-gray-300 px-2 py-2 text-center ${
-                                isOverCapacity ? 'text-red-700' : 'text-green-700'
-                              }`}
-                            >
-                              {remaining.toFixed(1)}
-                            </td>
-                          );
-                        })}
-                        <td className="border border-gray-300 px-4 py-2 sticky right-0 bg-gray-50 z-10"></td>
-                        <td className="border border-gray-300 px-2 py-2 sticky right-0 bg-gray-50 z-10"></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+            // Item datasets
+            developmentItems.forEach((item, idx) => {
+              if (item.name) {
+                datasets.push({
+                  label: item.name,
+                  data: sprints.map(sprint => item.allocations[sprint.name] || 0),
+                  backgroundColor: itemColors[idx % itemColors.length],
+                  stack: 'items'
+                });
+              }
+            });
 
-                <button
-                  onClick={addDevelopmentItem}
-                  className="mt-4 flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                >
-                  <Plus size={20} />
-                  Add Development Item
-                </button>
-              </div>
+            if (chartInstance.current) {
+              chartInstance.current.destroy();
+            }
 
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">Resource Overview</h2>
-                <ResponsiveContainer width="100%" height={500}>
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="sprint" angle={-45} textAnchor="end" height={100} />
-                    <YAxis label={{ value: 'Person-Days', angle: -90, position: 'insideLeft' }} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="capacity" fill="#e5e7eb" name="Capacity" />
-                    {developmentItems.filter(item => item.name).map((item, index) => (
-                      <Bar 
-                        key={item.name || index} 
-                        dataKey={item.name} 
-                        stackId="items" 
-                        fill={itemColors[index % itemColors.length]}
-                      />
-                    ))}
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+            chartInstance.current = new Chart(chartRef.current, {
+              type: 'bar',
+              data: {
+                labels: sprints.map(s => s.name),
+                datasets: datasets
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                  x: {
+                    stacked: true,
+                  },
+                  y: {
+                    stacked: true,
+                    title: {
+                      display: true,
+                      text: 'Person-Days'
+                    }
+                  }
+                },
+                plugins: {
+                  legend: {
+                    display: true,
+                    position: 'top'
+                  }
+                }
+              }
+            });
+
+            return () => {
+              if (chartInstance.current) {
+                chartInstance.current.destroy();
+              }
+            };
+          }, [sprints, developmentItems]);
+
+          return React.createElement('div', { className: 'p-6 max-w-full mx-auto bg-gray-50 min-h-screen' },
+            React.createElement('div', { className: 'bg-white rounded-lg shadow-lg p-6 mb-6' },
+              React.createElement('div', { className: 'flex justify-between items-center mb-6' },
+                React.createElement('h1', { className: 'text-3xl font-bold text-gray-800' }, 'Sprint Resource Planning 2026'),
+                React.createElement('div', { className: 'flex gap-2' },
+                  React.createElement('button', {
+                    onClick: clearAllData,
+                    className: 'flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition'
+                  },
+                    React.createElement(Trash2, { size: 20 }),
+                    'Clear All Data'
+                  ),
+                  React.createElement('button', {
+                    onClick: exportToCSV,
+                    className: 'flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition'
+                  },
+                    React.createElement(Download, { size: 20 }),
+                    'Export CSV'
+                  )
+                )
+              ),
+              React.createElement('div', { className: 'mb-6 p-4 bg-blue-50 rounded-lg' },
+                React.createElement('p', { className: 'text-sm text-gray-700' },
+                  React.createElement('strong', null, 'Default Sprint Capacity: '),
+                  '13 Backend Developers x 10 days = 130 person-days per sprint'
+                )
+              ),
+              React.createElement('div', { className: 'overflow-x-auto' },
+                React.createElement('table', { className: 'w-full border-collapse' },
+                  React.createElement('thead', null,
+                    React.createElement('tr', { className: 'bg-gray-100' },
+                      React.createElement('th', { className: 'border border-gray-300 px-4 py-2 text-left sticky left-0 bg-gray-100 z-10 min-w-[200px]' }, 'Development Item'),
+                      ...sprints.map((sprint, index) =>
+                        React.createElement('th', { key: index, className: 'border border-gray-300 px-2 py-2 text-center min-w-[80px]' },
+                          React.createElement('div', { className: 'text-sm font-semibold' }, sprint.name),
+                          React.createElement('div', { className: 'text-xs text-gray-600 font-normal' }, sprint.startDate),
+                          React.createElement('div', { className: 'text-xs text-gray-600 font-normal' }, sprint.endDate)
+                        )
+                      ),
+                      React.createElement('th', { className: 'border border-gray-300 px-4 py-2 text-center sticky right-0 bg-gray-100 z-10 min-w-[100px]' }, 'Total Days'),
+                      React.createElement('th', { className: 'border border-gray-300 px-2 py-2 text-center sticky right-0 bg-gray-100 z-10 min-w-[60px]' }, 'Actions')
+                    )
+                  ),
+                  React.createElement('tbody', null,
+                    ...developmentItems.map((item, itemIndex) =>
+                      React.createElement('tr', { key: itemIndex, className: 'hover:bg-gray-50' },
+                        React.createElement('td', { className: 'border border-gray-300 px-4 py-2 sticky left-0 bg-white z-10' },
+                          React.createElement('div', { className: 'flex items-center gap-2' },
+                            React.createElement('div', {
+                              className: 'w-4 h-4 rounded border border-gray-300 flex-shrink-0',
+                              style: { backgroundColor: itemColors[itemIndex % itemColors.length] }
+                            }),
+                            React.createElement('input', {
+                              type: 'text',
+                              value: item.name,
+                              onChange: (e) => updateDevelopmentItemName(itemIndex, e.target.value),
+                              className: 'flex-1 px-2 py-1 border border-gray-300 rounded text-sm',
+                              placeholder: 'Enter development item name'
+                            })
+                          )
+                        ),
+                        ...sprints.map((sprint, sprintIndex) =>
+                          React.createElement('td', { key: sprintIndex, className: 'border border-gray-300 px-2 py-2' },
+                            React.createElement('input', {
+                              type: 'number',
+                              value: item.allocations[sprint.name] || '',
+                              onChange: (e) => updateAllocation(itemIndex, sprint.name, e.target.value),
+                              className: 'w-full px-2 py-1 border border-gray-300 rounded text-sm text-center',
+                              placeholder: '0',
+                              min: '0',
+                              step: '0.5'
+                            })
+                          )
+                        ),
+                        React.createElement('td', { className: 'border border-gray-300 px-4 py-2 text-center font-semibold sticky right-0 bg-white z-10' },
+                          itemTotals[itemIndex].toFixed(1)
+                        ),
+                        React.createElement('td', { className: 'border border-gray-300 px-2 py-2 text-center sticky right-0 bg-white z-10' },
+                          React.createElement('button', {
+                            onClick: () => removeDevelopmentItem(itemIndex),
+                            className: 'p-1 text-red-600 hover:bg-red-50 rounded',
+                            title: 'Delete development item'
+                          },
+                            React.createElement(Trash2, { size: 16 })
+                          )
+                        )
+                      )
+                    ),
+                    React.createElement('tr', { className: 'bg-gray-100 font-semibold' },
+                      React.createElement('td', { className: 'border border-gray-300 px-4 py-2 sticky left-0 bg-gray-100 z-10' }, 'Total Allocated'),
+                      ...sprints.map((sprint, index) => {
+                        const total = sprintTotals[sprint.name];
+                        const isOverCapacity = total > sprint.capacity;
+                        return React.createElement('td', {
+                          key: index,
+                          className: `border border-gray-300 px-2 py-2 text-center ${isOverCapacity ? 'bg-red-100 text-red-700' : 'bg-green-50 text-green-700'}`
+                        }, total.toFixed(1));
+                      }),
+                      React.createElement('td', { className: 'border border-gray-300 px-4 py-2 sticky right-0 bg-gray-100 z-10' }),
+                      React.createElement('td', { className: 'border border-gray-300 px-2 py-2 sticky right-0 bg-gray-100 z-10' })
+                    ),
+                    React.createElement('tr', { className: 'bg-gray-50' },
+                      React.createElement('td', { className: 'border border-gray-300 px-4 py-2 sticky left-0 bg-gray-50 z-10' }, 'Capacity'),
+                      ...sprints.map((sprint, index) =>
+                        React.createElement('td', { key: index, className: 'border border-gray-300 px-2 py-2 text-center' },
+                          React.createElement('input', {
+                            type: 'number',
+                            value: sprint.capacity,
+                            onChange: (e) => updateSprintCapacity(index, e.target.value),
+                            className: 'w-full px-2 py-1 border border-gray-300 rounded text-sm text-center bg-white',
+                            min: '0',
+                            step: '1'
+                          })
+                        )
+                      ),
+                      React.createElement('td', { className: 'border border-gray-300 px-4 py-2 sticky right-0 bg-gray-50 z-10' }),
+                      React.createElement('td', { className: 'border border-gray-300 px-2 py-2 sticky right-0 bg-gray-50 z-10' })
+                    ),
+                    React.createElement('tr', { className: 'bg-gray-50 font-semibold' },
+                      React.createElement('td', { className: 'border border-gray-300 px-4 py-2 sticky left-0 bg-gray-50 z-10' }, 'Remaining'),
+                      ...sprints.map((sprint, index) => {
+                        const remaining = sprint.capacity - sprintTotals[sprint.name];
+                        const isOverCapacity = remaining < 0;
+                        return React.createElement('td', {
+                          key: index,
+                          className: `border border-gray-300 px-2 py-2 text-center ${isOverCapacity ? 'text-red-700' : 'text-green-700'}`
+                        }, remaining.toFixed(1));
+                      }),
+                      React.createElement('td', { className: 'border border-gray-300 px-4 py-2 sticky right-0 bg-gray-50 z-10' }),
+                      React.createElement('td', { className: 'border border-gray-300 px-2 py-2 sticky right-0 bg-gray-50 z-10' })
+                    )
+                  )
+                )
+              ),
+              React.createElement('button', {
+                onClick: addDevelopmentItem,
+                className: 'mt-4 flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition'
+              },
+                React.createElement(Plus, { size: 20 }),
+                'Add Development Item'
+              )
+            ),
+            React.createElement('div', { className: 'bg-white rounded-lg shadow-lg p-6' },
+              React.createElement('h2', { className: 'text-2xl font-bold text-gray-800 mb-6' }, 'Resource Overview'),
+              React.createElement('div', { style: { height: '500px' } },
+                React.createElement('canvas', { ref: chartRef })
+              )
+            )
           );
         };
 
-        ReactDOM.render(<ResourcePlanning />, document.getElementById('root'));
+        ReactDOM.render(React.createElement(ResourcePlanning), document.getElementById('root'));
     </script>
 </body>
 </html>
