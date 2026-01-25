@@ -142,7 +142,7 @@
           };
 
           const [sprints, setSprints] = useState(generateSprints());
-          const [developmentItems, setDevelopmentItems] = useState([{ name: '', allocations: {} }]);
+          const [developmentItems, setDevelopmentItems] = useState([{ name: '', allocations: {}, color: '#3b82f6' }]);
           const chartRef = React.useRef(null);
           const chartInstance = React.useRef(null);
           const saveTimeoutRef = React.useRef(null);
@@ -227,7 +227,9 @@
           };
 
           const addDevelopmentItem = () => {
-            setDevelopmentItems([...developmentItems, { name: '', allocations: {} }]);
+            const usedColors = developmentItems.map(item => item.color);
+            const availableColor = itemColors.find(color => !usedColors.includes(color)) || itemColors[developmentItems.length % itemColors.length];
+            setDevelopmentItems([...developmentItems, { name: '', allocations: {}, color: availableColor }]);
           };
 
           const removeDevelopmentItem = (index) => {
@@ -237,6 +239,12 @@
           const updateDevelopmentItemName = (index, name) => {
             const updated = [...developmentItems];
             updated[index].name = name;
+            setDevelopmentItems(updated);
+          };
+
+          const updateDevelopmentItemColor = (index, color) => {
+            const updated = [...developmentItems];
+            updated[index].color = color;
             setDevelopmentItems(updated);
           };
 
@@ -297,7 +305,7 @@
           const clearAllData = async () => {
             if (window.confirm('Are you sure you want to clear all data? This cannot be undone and will affect all users.')) {
               const defaultSprints = generateSprints();
-              const defaultItems = [{ name: '', allocations: {} }];
+              const defaultItems = [{ name: '', allocations: {}, color: '#3b82f6' }];
               
               setSprints(defaultSprints);
               setDevelopmentItems(defaultItems);
@@ -337,7 +345,7 @@
                 datasets.push({
                   label: item.name,
                   data: sprints.map(sprint => item.allocations[sprint.name] || 0),
-                  backgroundColor: itemColors[idx % itemColors.length],
+                  backgroundColor: item.color || itemColors[idx % itemColors.length],
                   stack: 'items'
                 });
               }
@@ -369,7 +377,41 @@
                 plugins: {
                   legend: {
                     display: true,
-                    position: 'top'
+                    position: 'right',
+                    onClick: function(e, legendItem, legend) {
+                      const index = legendItem.datasetIndex;
+                      const chart = legend.chart;
+                      
+                      // Check if this is the only visible dataset (excluding capacity)
+                      let visibleCount = 0;
+                      let lastVisible = -1;
+                      chart.data.datasets.forEach((dataset, i) => {
+                        if (i > 0 && chart.isDatasetVisible(i)) {
+                          visibleCount++;
+                          lastVisible = i;
+                        }
+                      });
+                      
+                      // If clicking the only visible item, show all
+                      if (visibleCount === 1 && lastVisible === index) {
+                        chart.data.datasets.forEach((dataset, i) => {
+                          if (i > 0) {
+                            chart.show(i);
+                          }
+                        });
+                      } else {
+                        // Hide all except capacity and clicked item
+                        chart.data.datasets.forEach((dataset, i) => {
+                          if (i === 0) {
+                            chart.show(i); // Always show capacity
+                          } else if (i === index) {
+                            chart.show(i); // Show clicked item
+                          } else {
+                            chart.hide(i); // Hide others
+                          }
+                        });
+                      }
+                    }
                   }
                 }
               }
@@ -467,9 +509,12 @@
                       React.createElement('tr', { key: itemIndex, className: 'hover:bg-gray-50' },
                         React.createElement('td', { className: 'border border-gray-300 px-4 py-2 sticky left-0 bg-white z-10' },
                           React.createElement('div', { className: 'flex items-center gap-2' },
-                            React.createElement('div', {
-                              className: 'w-4 h-4 rounded border border-gray-300 flex-shrink-0',
-                              style: { backgroundColor: itemColors[itemIndex % itemColors.length] }
+                            React.createElement('input', {
+                              type: 'color',
+                              value: item.color || itemColors[itemIndex % itemColors.length],
+                              onChange: (e) => updateDevelopmentItemColor(itemIndex, e.target.value),
+                              className: 'w-8 h-8 rounded border border-gray-300 cursor-pointer',
+                              title: 'Choose color'
                             }),
                             React.createElement('input', {
                               type: 'text',
@@ -486,7 +531,11 @@
                               type: 'number',
                               value: item.allocations[sprint.name] || '',
                               onChange: (e) => updateAllocation(itemIndex, sprint.name, e.target.value),
-                              className: 'w-full px-2 py-1 border border-gray-300 rounded text-sm text-center',
+                              className: `w-full px-2 py-1 border border-gray-300 rounded text-sm text-center ${
+                                item.allocations[sprint.name] && item.allocations[sprint.name] > 0 
+                                  ? 'bg-blue-50 font-semibold border-blue-300' 
+                                  : 'bg-white text-gray-400'
+                              }`,
                               placeholder: '0',
                               min: '0',
                               step: '0.5'
