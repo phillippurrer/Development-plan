@@ -1,1100 +1,391 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sprint Resource Planning 2026 - Multi Team</title>
+    <title>Development Ressourcenplanung 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/recharts@2.5.0/dist/Recharts.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
     <div id="root"></div>
-    <script src="https://cdn.jsdelivr.net/npm/recharts@2.5.0/dist/Recharts.js"></script>
-    <script>
-        const firebaseConfig = {
-          apiKey: "AIzaSyAxqJDTt5LPqfWTyxnTv_A5fe-34ULhMpw",
-          authDomain: "developmentplanning-d0761.firebaseapp.com",
-          projectId: "developmentplanning-d0761",
-          storageBucket: "developmentplanning-d0761.firebasestorage.app",
-          messagingSenderId: "811254392085",
-          appId: "1:811254392085:web:5c5cec61391ec0fcae751c",
-          measurementId: "G-GJL4BPD36T"
-        };
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        
+    <script type="text/babel">
         const { useState, useEffect } = React;
-        const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } = window.Recharts;
+        const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } = Recharts;
 
-        const Plus = ({ size = 24 }) => React.createElement('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '2' },
-          React.createElement('line', { x1: '12', y1: '5', x2: '12', y2: '19' }),
-          React.createElement('line', { x1: '5', y1: '12', x2: '19', y2: '12' })
-        );
-        
-        const Trash2 = ({ size = 24 }) => React.createElement('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '2' },
-          React.createElement('polyline', { points: '3 6 5 6 21 6' }),
-          React.createElement('path', { d: 'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' }),
-          React.createElement('line', { x1: '10', y1: '11', x2: '10', y2: '17' }),
-          React.createElement('line', { x1: '14', y1: '11', x2: '14', y2: '17' })
-        );
-        
-        const Download = ({ size = 24 }) => React.createElement('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '2' },
-          React.createElement('path', { d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' }),
-          React.createElement('polyline', { points: '7 10 12 15 17 10' }),
-          React.createElement('line', { x1: '12', y1: '15', x2: '12', y2: '3' })
-        );
-
-        const Cloud = ({ size = 24 }) => React.createElement('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '2' },
-          React.createElement('path', { d: 'M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z' })
-        );
-
-        const Settings = ({ size = 24 }) => React.createElement('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '2' },
-          React.createElement('circle', { cx: '12', cy: '12', r: '3' }),
-          React.createElement('path', { d: 'M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m-2 2l-4.2 4.2m10.4 1l-4.2-4.2m-2-2l-4.2-4.2' })
-        );
-
-        const GripVertical = ({ size = 24 }) => React.createElement('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '2' },
-          React.createElement('circle', { cx: '9', cy: '12', r: '1' }),
-          React.createElement('circle', { cx: '9', cy: '5', r: '1' }),
-          React.createElement('circle', { cx: '9', cy: '19', r: '1' }),
-          React.createElement('circle', { cx: '15', cy: '12', r: '1' }),
-          React.createElement('circle', { cx: '15', cy: '5', r: '1' }),
-          React.createElement('circle', { cx: '15', cy: '19', r: '1' })
-        );
-
-        const ResourcePlanning = () => {
-          const [loading, setLoading] = useState(true);
-          const [lastSaved, setLastSaved] = useState(null);
-          const [syncStatus, setSyncStatus] = useState('disconnected');
-          const [activeTeam, setActiveTeam] = useState('Backend');
-          const [showTeamSettings, setShowTeamSettings] = useState(false);
-          const [draggedItem, setDraggedItem] = useState(null);
-          const saveTimeoutRef = React.useRef(null);
-          
-          const teamOrder = ['Backend', 'Database', 'Terminal', 'Backoffice', 'Digital'];
-
-          const generateSprints = () => {
-            const sprintData = [
-              { name: '26.02', start: '29.12.2025', end: '11.01.2026', month: 'Jan' },
-              { name: '26.04', start: '12.01.2026', end: '25.01.2026', month: 'Jan' },
-              { name: '26.06', start: '26.01.2026', end: '08.02.2026', month: 'Feb' },
-              { name: '26.08', start: '09.02.2026', end: '22.02.2026', month: 'Feb' },
-              { name: '26.10', start: '23.02.2026', end: '08.03.2026', month: 'Mar' },
-              { name: '26.12', start: '09.03.2026', end: '22.03.2026', month: 'Mar' },
-              { name: '26.14', start: '23.03.2026', end: '05.04.2026', month: 'Apr' },
-              { name: '26.16', start: '06.04.2026', end: '19.04.2026', month: 'Apr' },
-              { name: '26.18', start: '20.04.2026', end: '03.05.2026', month: 'May' },
-              { name: '26.20', start: '04.05.2026', end: '17.05.2026', month: 'May' },
-              { name: '26.22', start: '18.05.2026', end: '31.05.2026', month: 'May' },
-              { name: '26.24', start: '01.06.2026', end: '14.06.2026', month: 'Jun' },
-              { name: '26.26', start: '15.06.2026', end: '28.06.2026', month: 'Jun' },
-              { name: '26.28', start: '29.06.2026', end: '12.07.2026', month: 'Jul' },
-              { name: '26.30', start: '13.07.2026', end: '26.07.2026', month: 'Jul' },
-              { name: '26.32', start: '27.07.2026', end: '09.08.2026', month: 'Aug' },
-              { name: '26.34', start: '10.08.2026', end: '23.08.2026', month: 'Aug' },
-              { name: '26.36', start: '24.08.2026', end: '06.09.2026', month: 'Sep' },
-              { name: '26.38', start: '07.09.2026', end: '20.09.2026', month: 'Sep' },
-              { name: '26.40', start: '21.09.2026', end: '04.10.2026', month: 'Oct' },
-              { name: '26.42', start: '05.10.2026', end: '18.10.2026', month: 'Oct' },
-              { name: '26.44', start: '19.10.2026', end: '01.11.2026', month: 'Nov' },
-              { name: '26.46', start: '02.11.2026', end: '15.11.2026', month: 'Nov' },
-              { name: '26.48', start: '16.11.2026', end: '29.11.2026', month: 'Nov' },
-              { name: '26.50', start: '30.11.2026', end: '13.12.2026', month: 'Dec' },
-              { name: '26.52', start: '14.12.2026', end: '27.12.2026', month: 'Dec' }
-            ];
-            
-            return sprintData.map(sprint => ({
-              name: sprint.name,
-              startDate: sprint.start,
-              endDate: sprint.end,
-              month: sprint.month,
-              period: `${sprint.start} - ${sprint.end}`
-            }));
-          };
-
-          const sampleBackendData = [
-            { name: 'FR-9018 Boyles Debitcard', color: '#10b981', allocations: { '26.02': 18, '26.04': 35, '26.06': 35, '26.08': 40, '26.10': 40, '26.12': 40, '26.14': 40, '26.16': 40 }},
-            { name: 'FR-9034 PP Ramp Ret. Cont', color: '#14b8a6', allocations: { '26.02': 18, '26.04': 25, '26.06': 25, '26.08': 20 }},
-            { name: 'Caixa Tilldroid', color: '#84cc16', allocations: { '26.04': 5, '26.06': 8, '26.08': 10, '26.10': 3, '26.12': 3 }},
-            { name: 'SBS neo migration', color: '#ec4899', allocations: { '26.04': 9, '26.06': 3, '26.08': 3 }},
-            { name: 'Async Improvements', color: '#ef4444', allocations: { '26.04': 8, '26.06': 8, '26.08': 5, '26.10': 10, '26.12': 10, '26.14': 10, '26.16': 10 }},
-            { name: 'SBS Performance Improvements', color: '#dc2626', allocations: { '26.06': 2, '26.08': 5, '26.10': 10 }},
-            { name: 'FR-5857 Improved ticket storage', color: '#3b82f6', allocations: { '26.02': 8, '26.04': 20, '26.06': 20, '26.08': 20, '26.10': 20, '26.12': 20, '26.14': 20, '26.16': 20, '26.18': 20, '26.20': 20, '26.22': 20, '26.24': 20, '26.26': 20 }},
-            { name: 'Semantic Search', color: '#06b6d4', allocations: { '26.04': 15, '26.06': 20, '26.08': 15, '26.10': 10, '26.12': 20 }},
-            { name: 'Digital: Tickethistory', color: '#0ea5e9', allocations: { '26.06': 5, '26.08': 5, '26.10': 5, '26.12': 5, '26.14': 5, '26.16': 5 }},
-            { name: 'Betbuilder+', color: '#14b8a6', allocations: { '26.02': 1 }},
-            { name: 'Backend BAU', color: '#eab308', allocations: { '26.02': 16, '26.04': 20, '26.06': 20, '26.08': 20, '26.10': 20, '26.12': 20, '26.14': 20, '26.16': 20, '26.18': 20, '26.20': 20, '26.22': 20, '26.24': 20, '26.26': 20, '26.28': 20, '26.30': 20, '26.32': 20, '26.34': 20, '26.36': 20 }},
-            { name: 'SystemIntegration BAU', color: '#a3a308', allocations: { '26.10': 20, '26.12': 20, '26.14': 20, '26.16': 20, '26.18': 20, '26.20': 20, '26.22': 20, '26.24': 20, '26.26': 20, '26.28': 20, '26.30': 20, '26.32': 20, '26.34': 20, '26.36': 20, '26.38': 20, '26.40': 20, '26.42': 20, '26.44': 20, '26.46': 20, '26.48': 20, '26.50': 20, '26.52': 20 }}
-          ];
-
-          const initialTeams = {
-            'Backend': {
-              name: 'Backend',
-              color: '#3b82f6',
-              employees: [{ name: '13 Backend Developers', daysPerWeek: 65 }],
-              defaultCapacity: 130,
-              sprints: generateSprints().map(s => ({ ...s, capacity: 130 })),
-              developmentItems: sampleBackendData
-            },
-            'Terminal': {
-              name: 'Terminal',
-              color: '#ef4444',
-              employees: [{ name: 'Default Team', daysPerWeek: 40 }],
-              defaultCapacity: 80,
-              sprints: generateSprints().map(s => ({ ...s, capacity: 80 })),
-              developmentItems: []
-            },
-            'Backoffice': {
-              name: 'Backoffice',
-              color: '#10b981',
-              employees: [{ name: 'Default Team', daysPerWeek: 30 }],
-              defaultCapacity: 60,
-              sprints: generateSprints().map(s => ({ ...s, capacity: 60 })),
-              developmentItems: []
-            },
-            'Digital': {
-              name: 'Digital',
-              color: '#f59e0b',
-              employees: [{ name: 'Default Team', daysPerWeek: 50 }],
-              defaultCapacity: 100,
-              sprints: generateSprints().map(s => ({ ...s, capacity: 100 })),
-              developmentItems: []
-            },
-            'Database': {
-              name: 'Database',
-              color: '#8b5cf6',
-              employees: [{ name: 'Default Team', daysPerWeek: 20 }],
-              defaultCapacity: 40,
-              sprints: generateSprints().map(s => ({ ...s, capacity: 40 })),
-              developmentItems: []
-            }
-          };
-
-          const [teams, setTeams] = useState(initialTeams);
-
-          const itemColors = [
-            '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
-            '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16'
-          ];
-
-          useEffect(() => {
-            const loadData = async () => {
-              setLoading(true);
-              setSyncStatus('loading');
-              
-              try {
-                const doc = await db.collection('multiTeamResourcePlanning').doc('teams').get();
-                
-                if (doc.exists) {
-                  const data = doc.data();
-                  if (data.teams) {
-                    const migratedTeams = {};
-                    Object.keys(data.teams).forEach(teamName => {
-                      const team = data.teams[teamName];
-                      migratedTeams[teamName] = {
-                        ...team,
-                        employees: team.employees || [{ name: 'Default Team', daysPerWeek: team.sprints?.[0]?.capacity / 2 || 65 }],
-                        sprints: team.sprints.map(s => ({
-                          ...s,
-                          name: s.name.replace('PTS', '')
-                        })),
-                        developmentItems: team.developmentItems.map(item => {
-                          const newAllocations = {};
-                          Object.keys(item.allocations || {}).forEach(sprintName => {
-                            const newName = sprintName.replace('PTS', '');
-                            newAllocations[newName] = item.allocations[sprintName];
-                          });
-                          return {
-                            ...item,
-                            allocations: newAllocations
-                          };
-                        })
-                      };
-                    });
-                    setTeams(migratedTeams);
-                  }
-                  if (data.lastSaved) setLastSaved(new Date(data.lastSaved));
-                  setSyncStatus('synced');
-                } else {
-                  setSyncStatus('synced');
-                }
-              } catch (error) {
-                console.error('Error loading data:', error);
-                setSyncStatus('error');
-              }
-              
-              setLoading(false);
-            };
-            
-            loadData();
-          }, []);
-
-          useEffect(() => {
-            if (loading) return;
-            
-            if (saveTimeoutRef.current) {
-              clearTimeout(saveTimeoutRef.current);
-            }
-            
-            setSyncStatus('saving');
-            
-            saveTimeoutRef.current = setTimeout(async () => {
-              try {
-                const data = {
-                  teams,
-                  lastSaved: new Date().toISOString()
-                };
-                
-                await db.collection('multiTeamResourcePlanning').doc('teams').set(data);
-                
-                setLastSaved(new Date());
-                setSyncStatus('synced');
-              } catch (error) {
-                console.error('Error saving data:', error);
-                setSyncStatus('error');
-              }
-            }, 1000);
-            
-            return () => {
-              if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
-              }
-            };
-          }, [teams, loading]);
-
-          const addEmployee = (teamName) => {
-            setTeams(prev => {
-              const updated = { ...prev };
-              updated[teamName] = {
-                ...updated[teamName],
-                employees: [...updated[teamName].employees, { name: '', daysPerWeek: 0 }]
-              };
-              return updated;
-            });
-          };
-
-          const updateEmployee = (teamName, empIndex, field, value) => {
-            setTeams(prev => {
-              const updated = { ...prev };
-              const employees = [...updated[teamName].employees];
-              employees[empIndex] = { ...employees[empIndex], [field]: field === 'daysPerWeek' ? Number(value) || 0 : value };
-              
-              const totalCapacity = employees.reduce((sum, emp) => sum + (emp.daysPerWeek || 0), 0);
-              
-              updated[teamName] = {
-                ...updated[teamName],
-                employees,
-                defaultCapacity: totalCapacity
-              };
-              return updated;
-            });
-          };
-
-          const removeEmployee = (teamName, empIndex) => {
-            setTeams(prev => {
-              const updated = { ...prev };
-              const employees = updated[teamName].employees.filter((_, i) => i !== empIndex);
-              
-              const totalCapacity = employees.reduce((sum, emp) => sum + (emp.daysPerWeek || 0), 0);
-              
-              updated[teamName] = {
-                ...updated[teamName],
-                employees: employees.length > 0 ? employees : [{ name: '', daysPerWeek: 0 }],
-                defaultCapacity: totalCapacity
-              };
-              return updated;
-            });
-          };
-
-          const updateSprintCapacity = (teamName, sprintName, value) => {
-            setTeams(prev => {
-              const updated = { ...prev };
-              const sprints = [...updated[teamName].sprints];
-              const sprintIndex = sprints.findIndex(s => s.name === sprintName);
-              if (sprintIndex !== -1) {
-                sprints[sprintIndex] = { ...sprints[sprintIndex], capacity: Number(value) || 0 };
-                updated[teamName] = {
-                  ...updated[teamName],
-                  sprints
-                };
-              }
-              return updated;
-            });
-          };
-
-          const addItem = (teamName) => {
-            setTeams(prev => {
-              const updated = { ...prev };
-              const items = updated[teamName].developmentItems;
-              const nextColor = itemColors[items.length % itemColors.length];
-              updated[teamName] = {
-                ...updated[teamName],
-                developmentItems: [...items, { name: '', allocations: {}, color: nextColor }]
-              };
-              return updated;
-            });
-          };
-
-          const removeItem = (teamName, itemIndex) => {
-            setTeams(prev => {
-              const updated = { ...prev };
-              updated[teamName] = {
-                ...updated[teamName],
-                developmentItems: updated[teamName].developmentItems.filter((_, i) => i !== itemIndex)
-              };
-              return updated;
-            });
-          };
-
-          const updateItemName = (teamName, itemIndex, value) => {
-            setTeams(prev => {
-              const updated = { ...prev };
-              const items = [...updated[teamName].developmentItems];
-              items[itemIndex] = { ...items[itemIndex], name: value };
-              updated[teamName] = {
-                ...updated[teamName],
-                developmentItems: items
-              };
-              return updated;
-            });
-          };
-
-          const updateItemColor = (teamName, itemIndex, value) => {
-            setTeams(prev => {
-              const updated = { ...prev };
-              const items = [...updated[teamName].developmentItems];
-              items[itemIndex] = { ...items[itemIndex], color: value };
-              updated[teamName] = {
-                ...updated[teamName],
-                developmentItems: items
-              };
-              return updated;
-            });
-          };
-
-          const updateAllocation = (teamName, itemIndex, sprintName, value) => {
-            setTeams(prev => {
-              const updated = { ...prev };
-              const items = [...updated[teamName].developmentItems];
-              const allocations = { ...items[itemIndex].allocations };
-              const numValue = Number(value) || 0;
-              
-              if (numValue === 0) {
-                delete allocations[sprintName];
-              } else {
-                allocations[sprintName] = numValue;
-              }
-              
-              items[itemIndex] = { ...items[itemIndex], allocations };
-              updated[teamName] = {
-                ...updated[teamName],
-                developmentItems: items
-              };
-              return updated;
-            });
-          };
-
-          const handleDragStart = (e, teamName, itemIndex) => {
-            setDraggedItem({ teamName, itemIndex });
-            e.dataTransfer.effectAllowed = 'move';
-          };
-
-          const handleDragOver = (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-          };
-
-          const handleDrop = (e, teamName, targetIndex) => {
-            e.preventDefault();
-            
-            if (!draggedItem || draggedItem.teamName !== teamName) return;
-            
-            const sourceIndex = draggedItem.itemIndex;
-            if (sourceIndex === targetIndex) return;
-            
-            setTeams(prev => {
-              const updated = { ...prev };
-              const items = [...updated[teamName].developmentItems];
-              const [movedItem] = items.splice(sourceIndex, 1);
-              items.splice(targetIndex, 0, movedItem);
-              
-              updated[teamName] = {
-                ...updated[teamName],
-                developmentItems: items
-              };
-              return updated;
-            });
-            
-            setDraggedItem(null);
-          };
-
-          const exportToCSV = () => {
-            const team = teams[activeTeam];
-            let csv = 'Development Item,Color,' + team.sprints.map(s => s.name).join(',') + ',Total Days\\n';
-            
-            team.developmentItems.forEach(item => {
-              if (item.name) {
-                const total = Object.values(item.allocations).reduce((sum, val) => sum + val, 0);
-                csv += `"${item.name}","${item.color}",`;
-                csv += team.sprints.map(s => item.allocations[s.name] || '0').join(',');
-                csv += `,${total}\\n`;
-              }
-            });
-            
-            csv += `\\nCapacity,${team.sprints.map(s => s.capacity).join(',')}\\n`;
-            
-            const totals = team.sprints.map(sprint => 
-              team.developmentItems.reduce((sum, item) => sum + (item.allocations[sprint.name] || 0), 0)
-            );
-            csv += `Total Allocated,${totals.join(',')}\\n`;
-            
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `sprint_planning_${activeTeam}_${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
-          };
-
-          const clearAllData = async () => {
-            if (confirm('Are you sure you want to clear ALL data for ALL teams? This will delete everything from Firebase and reset to default.')) {
-              try {
-                await db.collection('multiTeamResourcePlanning').doc('teams').delete();
-                setTeams(initialTeams);
-                setLastSaved(null);
-                setSyncStatus('synced');
-                alert('All data cleared successfully!');
-              } catch (error) {
-                console.error('Error clearing data:', error);
-                alert('Error clearing data. Check console.');
-              }
-            }
-          };
-
-          const getChartData = () => {
-            if (activeTeam === 'All Teams') return [];
-            const team = teams[activeTeam];
-            const sprints = team.sprints;
-            const items = team.developmentItems.filter(item => item.name);
-            
-            return sprints.map((sprint) => {
-              const dataPoint = { name: sprint.name, month: sprint.month };
-              items.forEach(item => {
-                dataPoint[item.name] = item.allocations[sprint.name] || 0;
-              });
-              const allocated = items.reduce((sum, item) => sum + (item.allocations[sprint.name] || 0), 0);
-              dataPoint['Remaining Capacity'] = Math.max(0, sprint.capacity - allocated);
-              return dataPoint;
-            });
-          };
-
-          const getAllTeamsChartData = () => {
-            const allSprints = generateSprints();
-            return allSprints.map(sprint => {
-              const dataPoint = { name: sprint.name, month: sprint.month };
-              teamOrder.forEach(teamName => {
-                if (!teams[teamName]) return;
-                const t = teams[teamName];
-                const sprintData = t.sprints.find(s => s.name === sprint.name);
-                const capacity = sprintData?.capacity || t.defaultCapacity || 0;
-                const allocated = t.developmentItems.reduce((sum, item) => sum + (item.allocations[sprint.name] || 0), 0);
-                dataPoint[`${teamName}_Allocated`] = allocated;
-                dataPoint[`${teamName}_Capacity`] = capacity;
-              });
-              return dataPoint;
-            });
-          };
-
-          const CustomTooltip = ({ active, payload, label }) => {
-            if (active && payload && payload.length) {
-              const allSprints = generateSprints();
-              const sprint = allSprints.find(s => s.name === label);
-              return React.createElement('div', { className: 'bg-white p-3 border border-gray-300 rounded shadow' },
-                React.createElement('p', { className: 'font-bold' }, `${label} - ${sprint?.month}`),
-                payload.map((entry, index) =>
-                  React.createElement('p', { key: index, style: { color: entry.color } }, `${entry.name}: ${entry.value}`)
-                )
-              );
-            }
-            return null;
-          };
-
-          const AllTeamsTooltip = ({ active, payload, label }) => {
-            if (active && payload && payload.length) {
-              const allSprints = generateSprints();
-              const sprint = allSprints.find(s => s.name === label);
-              return React.createElement('div', { className: 'bg-white p-3 border border-gray-300 rounded shadow max-w-xs' },
-                React.createElement('p', { className: 'font-bold mb-2' }, `${label} - ${sprint?.month}`),
-                teamOrder.map(teamName => {
-                  if (!teams[teamName]) return null;
-                  const allocatedEntry = payload.find(p => p.dataKey === `${teamName}_Allocated`);
-                  const capacityEntry = payload.find(p => p.dataKey === `${teamName}_Capacity`);
-                  if (!allocatedEntry) return null;
-                  const utilization = capacityEntry?.value > 0 ? Math.round((allocatedEntry.value / capacityEntry.value) * 100) : 0;
-                  return React.createElement('div', { key: teamName, className: 'mb-1' },
-                    React.createElement('p', { style: { color: teams[teamName].color }, className: 'font-medium' },
-                      `${teamName}: ${allocatedEntry.value}/${capacityEntry?.value} (${utilization}%)`
-                    )
-                  );
-                })
-              );
-            }
-            return null;
-          };
-
-          const getSingleTeamBars = () => {
-            if (activeTeam === 'All Teams') return [];
-            const team = teams[activeTeam];
-            const items = team.developmentItems.filter(item => item.name);
-            return [...items.map(item => item.name), 'Remaining Capacity'];
-          };
-
-          if (loading) {
-            return React.createElement('div', { className: 'flex items-center justify-center min-h-screen bg-gray-50' },
-              React.createElement('div', { className: 'text-center' },
-                React.createElement('div', { className: 'text-xl text-gray-600 mb-2' }, 'Loading from Firebase...'),
-                React.createElement('div', { className: 'text-sm text-gray-500' }, 'Syncing multi-team data')
-              )
-            );
-          }
-
-          const team = activeTeam !== 'All Teams' ? teams[activeTeam] : null;
-          const allSprints = generateSprints();
-
-          return React.createElement('div', { className: 'p-6 max-w-full mx-auto bg-gray-50 min-h-screen' },
-            React.createElement('div', { className: 'mb-6 flex items-center justify-between' },
-              React.createElement('div', null,
-                React.createElement('h1', { className: 'text-3xl font-bold text-gray-800 mb-2' }, 'Sprint Resource Planning 2026'),
-                React.createElement('div', { className: 'flex items-center gap-4 text-sm' },
-                  React.createElement('div', { className: 'flex items-center gap-2' },
-                    React.createElement(Cloud, { size: 16 }),
-                    React.createElement('span', { 
-                      className: `font-medium ${
-                        syncStatus === 'synced' ? 'text-green-600' :
-                        syncStatus === 'saving' ? 'text-blue-600' :
-                        syncStatus === 'loading' ? 'text-gray-600' :
-                        'text-red-600'
-                      }` 
-                    }, 
-                      syncStatus === 'synced' ? 'Synced' :
-                      syncStatus === 'saving' ? 'Saving...' :
-                      syncStatus === 'loading' ? 'Loading...' :
-                      'Error'
-                    )
-                  ),
-                  lastSaved && React.createElement('span', { className: 'text-gray-500' },
-                    'Last saved: ' + lastSaved.toLocaleTimeString()
-                  )
-                )
-              ),
-              React.createElement('div', { className: 'flex gap-2' },
-                React.createElement('button', {
-                  onClick: () => setShowTeamSettings(!showTeamSettings),
-                  className: 'px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center gap-2'
-                },
-                  React.createElement(Settings, { size: 20 }),
-                  'Team Settings'
-                ),
-                React.createElement('button', {
-                  onClick: exportToCSV,
-                  disabled: activeTeam === 'All Teams',
-                  className: 'px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2'
-                },
-                  React.createElement(Download, { size: 20 }),
-                  'Export CSV'
-                ),
-                React.createElement('button', {
-                  onClick: clearAllData,
-                  className: 'px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-2'
-                },
-                  React.createElement(Trash2, { size: 20 }),
-                  'Clear All Data'
-                )
-              )
-            ),
-
-            showTeamSettings && React.createElement('div', { className: 'bg-white rounded-lg shadow-md p-6 mb-6' },
-              React.createElement('h2', { className: 'text-xl font-bold mb-4' }, 'Team Capacity Settings'),
-              React.createElement('div', { className: 'space-y-6' },
-                teamOrder.map(teamName => {
-                  if (!teams[teamName]) return null;
-                  const t = teams[teamName];
-                  const totalCapacity = t.employees.reduce((sum, emp) => sum + (emp.daysPerWeek || 0), 0);
-                  
-                  return React.createElement('div', { key: teamName, className: 'border-b pb-4' },
-                    React.createElement('div', { className: 'flex items-center justify-between mb-3' },
-                      React.createElement('h3', { className: 'font-bold text-lg', style: { color: t.color } }, teamName),
-                      React.createElement('div', { className: 'text-sm text-gray-600' },
-                        `Default Sprint Capacity: ${totalCapacity} days`
-                      )
-                    ),
-                    React.createElement('div', { className: 'space-y-2' },
-                      t.employees.map((emp, empIdx) =>
-                        React.createElement('div', { key: empIdx, className: 'flex gap-2 items-center' },
-                          React.createElement('input', {
-                            type: 'text',
-                            value: emp.name,
-                            onChange: (e) => updateEmployee(teamName, empIdx, 'name', e.target.value),
-                            placeholder: 'Employee/Group name',
-                            className: 'border px-2 py-1 rounded flex-1'
-                          }),
-                          React.createElement('input', {
-                            type: 'number',
-                            value: emp.daysPerWeek || '',
-                            onChange: (e) => updateEmployee(teamName, empIdx, 'daysPerWeek', e.target.value),
-                            placeholder: 'Days/sprint',
-                            className: 'border px-2 py-1 rounded w-32'
-                          }),
-                          React.createElement('button', {
-                            onClick: () => removeEmployee(teamName, empIdx),
-                            className: 'p-1 text-red-600 hover:bg-red-50 rounded'
-                          }, React.createElement(Trash2, { size: 18 }))
-                        )
-                      ),
-                      React.createElement('button', {
-                        onClick: () => addEmployee(teamName),
-                        className: 'px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm flex items-center gap-1'
-                      },
-                        React.createElement(Plus, { size: 16 }),
-                        'Add Employee/Group'
-                      )
-                    )
-                  );
-                })
-              )
-            ),
-
-            React.createElement('div', { className: 'mb-6 flex gap-2 flex-wrap' },
-              teamOrder.map(teamName => {
-                if (!teams[teamName]) return null;
-                return React.createElement('button', {
-                  key: teamName,
-                  onClick: () => setActiveTeam(teamName),
-                  className: `px-4 py-2 rounded font-medium ${activeTeam === teamName ? 'text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`,
-                  style: activeTeam === teamName ? { backgroundColor: teams[teamName].color } : {}
-                }, teamName);
-              }),
-              React.createElement('button', {
-                onClick: () => setActiveTeam('All Teams'),
-                className: `px-4 py-2 rounded font-medium ${activeTeam === 'All Teams' ? 'bg-gray-800 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`
-              }, 'All Teams')
-            ),
-
-            activeTeam !== 'All Teams' ? React.createElement('div', { className: 'bg-white rounded-lg shadow-md p-6 mb-6' },
-              React.createElement('div', { className: 'mb-6 flex items-center justify-between' },
-                React.createElement('h2', { className: 'text-2xl font-bold', style: { color: team.color } }, 
-                  `${team.name} Team - Resource Planning`
-                )
-              ),
-
-              React.createElement('div', { className: 'mb-6' },
-                React.createElement('div', { className: 'flex justify-start gap-0 mb-2', style: { marginLeft: '65px', width: 'calc(100% - 280px)' } },
-                  (() => {
-                    let currentMonth = '';
-                    const monthPositions = [];
-                    let startIdx = 0;
-                    
-                    team.sprints.forEach((sprint, idx) => {
-                      if (sprint.month !== currentMonth) {
-                        if (currentMonth) {
-                          monthPositions.push({ month: currentMonth, start: startIdx, end: idx - 1 });
-                        }
-                        currentMonth = sprint.month;
-                        startIdx = idx;
-                      }
-                      if (idx === team.sprints.length - 1) {
-                        monthPositions.push({ month: currentMonth, start: startIdx, end: idx });
-                      }
-                    });
-                    
-                    return monthPositions.map((pos, idx) => {
-                      const width = ((pos.end - pos.start + 1) / team.sprints.length) * 100;
-                      return React.createElement('div', { 
-                        key: idx, 
-                        style: { width: `${width}%` }, 
-                        className: 'text-center font-bold text-gray-700 text-sm' 
-                      }, pos.month);
-                    });
-                  })()
-                ),
-                React.createElement(ResponsiveContainer, { width: '100%', height: 400 },
-                  React.createElement(BarChart, { data: getChartData() },
-                    React.createElement(CartesianGrid, { strokeDasharray: '3 3' }),
-                    React.createElement(XAxis, { dataKey: 'name' }),
-                    React.createElement(YAxis, { label: { value: 'Person-Days', angle: -90, position: 'insideLeft' } }),
-                    React.createElement(Tooltip, { content: React.createElement(CustomTooltip) }),
-                    React.createElement(Legend, { layout: 'vertical', align: 'right', verticalAlign: 'middle' }),
-                    getSingleTeamBars().map((barKey, idx) => {
-                      const item = team.developmentItems.find(i => i.name === barKey);
-                      const color = barKey === 'Remaining Capacity' ? '#e5e7eb' : (item?.color || itemColors[idx % itemColors.length]);
-                      return React.createElement(Bar, { key: barKey, dataKey: barKey, stackId: 'a', fill: color });
-                    })
-                  )
-                )
-              ),
-
-              React.createElement('div', { className: 'overflow-x-auto' },
-                React.createElement('table', { className: 'w-full border-collapse text-sm' },
-                  React.createElement('thead', null,
-                    React.createElement('tr', { className: 'bg-gray-200' },
-                      React.createElement('th', { className: 'border p-1 text-center sticky left-0 bg-gray-200 z-20 w-[40px]' }),
-                      React.createElement('th', { className: 'border p-1 text-left sticky left-[40px] bg-gray-200 z-20', style: {minWidth: '245px'} }),
-                      React.createElement('th', { className: 'border p-1 text-center sticky left-[285px] bg-gray-200 z-20 w-[80px]' }),
-                      (() => {
-                        let currentMonth = '';
-                        let monthSpan = 0;
-                        const monthHeaders = [];
-                        
-                        team.sprints.forEach((sprint, idx) => {
-                          if (sprint.month !== currentMonth) {
-                            if (monthSpan > 0) {
-                              monthHeaders.push({ month: currentMonth, span: monthSpan });
-                            }
-                            currentMonth = sprint.month;
-                            monthSpan = 1;
-                          } else {
-                            monthSpan++;
-                          }
-                          
-                          if (idx === team.sprints.length - 1) {
-                            monthHeaders.push({ month: currentMonth, span: monthSpan });
-                          }
-                        });
-                        
-                        return monthHeaders.map((header, idx) =>
-                          React.createElement('th', { 
-                            key: idx, 
-                            colSpan: header.span, 
-                            className: 'border p-1 text-center font-bold text-gray-700' 
-                          }, header.month)
-                        );
-                      })(),
-                      React.createElement('th', { className: 'border p-1 text-center sticky right-[90px] bg-gray-200 z-20 w-[90px]' }),
-                      React.createElement('th', { className: 'border p-1 text-center sticky right-0 bg-gray-200 z-20 w-[90px]' })
-                    ),
-                    React.createElement('tr', { className: 'bg-gray-100' },
-                      React.createElement('th', { className: 'border p-2 text-center sticky left-0 bg-gray-100 z-20 w-[40px]' }),
-                      React.createElement('th', { className: 'border p-2 text-left sticky left-[40px] bg-gray-100 z-20', style: {minWidth: '245px'} }, 'Development Item'),
-                      React.createElement('th', { className: 'border p-2 text-center sticky left-[285px] bg-gray-100 z-20 w-[80px]' }, 'Color'),
-                      team.sprints.map(sprint =>
-                        React.createElement('th', { 
-                          key: sprint.name, 
-                          className: 'border p-2 text-center w-[70px]',
-                          title: sprint.period
-                        }, sprint.name)
-                      ),
-                      React.createElement('th', { className: 'border p-2 text-center sticky right-[90px] bg-gray-100 z-20 w-[90px]' }, 'Total Days'),
-                      React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 z-20 w-[90px]' }, 'Actions')
-                    )
-                  ),
-                  React.createElement('tbody', null,
-                    team.developmentItems.map((item, itemIdx) =>
-                      React.createElement('tr', { 
-                        key: itemIdx,
-                        className: 'hover:bg-gray-50',
-                        draggable: true,
-                        onDragStart: (e) => handleDragStart(e, activeTeam, itemIdx),
-                        onDragOver: handleDragOver,
-                        onDrop: (e) => handleDrop(e, activeTeam, itemIdx)
-                      },
-                        React.createElement('td', { className: 'border p-2 text-center sticky left-0 bg-white z-10 cursor-move' },
-                          React.createElement(GripVertical, { size: 18 })
-                        ),
-                        React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-white z-10' },
-                          React.createElement('input', {
-                            type: 'text',
-                            value: item.name,
-                            onChange: (e) => updateItemName(activeTeam, itemIdx, e.target.value),
-                            placeholder: 'Enter development item name',
-                            className: 'w-full px-2 py-1 border rounded'
-                          })
-                        ),
-                        React.createElement('td', { className: 'border p-2 text-center sticky left-[285px] bg-white z-10' },
-                          React.createElement('input', {
-                            type: 'color',
-                            value: item.color || '#3b82f6',
-                            onChange: (e) => updateItemColor(activeTeam, itemIdx, e.target.value),
-                            className: 'w-12 h-8 cursor-pointer'
-                          })
-                        ),
-                        team.sprints.map(sprint => {
-                          const value = item.allocations[sprint.name] || '';
-                          const hasValue = value > 0;
-                          return React.createElement('td', { 
-                            key: sprint.name, 
-                            className: `border p-1 ${hasValue ? 'bg-blue-50' : ''}` 
-                          },
-                            React.createElement('input', {
-                              type: 'number',
-                              min: '0',
-                              value: value,
-                              onChange: (e) => updateAllocation(activeTeam, itemIdx, sprint.name, e.target.value),
-                              placeholder: '0',
-                              className: `w-full px-1 py-1 border rounded text-center text-sm ${hasValue ? 'bg-blue-50 font-medium' : 'bg-white'}`,
-                              style: { width: '60px' }
-                            })
-                          );
-                        }),
-                        React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-[90px] bg-white z-10' },
-                          Object.values(item.allocations).reduce((sum, val) => sum + val, 0)
-                        ),
-                        React.createElement('td', { className: 'border p-2 text-center sticky right-0 bg-white z-10' },
-                          React.createElement('button', {
-                            onClick: () => removeItem(activeTeam, itemIdx),
-                            className: 'p-1 text-red-600 hover:bg-red-50 rounded'
-                          }, React.createElement(Trash2, { size: 18 }))
-                        )
-                      )
-                    ),
-                    React.createElement('tr', { className: 'bg-blue-50 font-bold' },
-                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-blue-50 z-10' }),
-                      React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-blue-50 z-10' }, 'Capacity'),
-                      React.createElement('td', { className: 'border p-2 sticky left-[285px] bg-blue-50 z-10' }),
-                      team.sprints.map(sprint =>
-                        React.createElement('td', { key: sprint.name, className: 'border p-1 text-center' },
-                          React.createElement('input', {
-                            type: 'number',
-                            min: '0',
-                            value: sprint.capacity,
-                            onChange: (e) => updateSprintCapacity(activeTeam, sprint.name, e.target.value),
-                            className: 'w-full px-1 py-1 border rounded text-center bg-white font-bold text-sm',
-                            style: { width: '60px' }
-                          })
-                        )
-                      ),
-                      React.createElement('td', { className: 'border p-2 sticky right-[90px] bg-blue-50 z-10' }),
-                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-blue-50 z-10' })
-                    ),
-                    React.createElement('tr', { className: 'bg-white font-bold' },
-                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-white z-10' }),
-                      React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-white z-10' }, 'Total Allocated'),
-                      React.createElement('td', { className: 'border p-2 sticky left-[285px] bg-white z-10' }),
-                      team.sprints.map(sprint => {
-                        const total = team.developmentItems.reduce((sum, item) => sum + (item.allocations[sprint.name] || 0), 0);
-                        return React.createElement('td', { 
-                          key: sprint.name, 
-                          className: 'border p-2 text-center' 
-                        }, total);
-                      }),
-                      React.createElement('td', { className: 'border p-2 sticky right-[90px] bg-white z-10' }),
-                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-white z-10' })
-                    ),
-                    React.createElement('tr', { className: 'bg-green-50 font-bold' },
-                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-green-50 z-10' }),
-                      React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-green-50 z-10' }, 'Remaining Capacity'),
-                      React.createElement('td', { className: 'border p-2 sticky left-[285px] bg-green-50 z-10' }),
-                      team.sprints.map(sprint => {
-                        const allocated = team.developmentItems.reduce((sum, item) => sum + (item.allocations[sprint.name] || 0), 0);
-                        const remaining = sprint.capacity - allocated;
-                        const isNegative = remaining < 0;
-                        return React.createElement('td', { 
-                          key: sprint.name, 
-                          className: `border p-2 text-center ${isNegative ? 'bg-red-100 text-red-700' : 'bg-green-50'}` 
-                        }, remaining);
-                      }),
-                      React.createElement('td', { className: 'border p-2 sticky right-[90px] bg-green-50 z-10' }),
-                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-green-50 z-10' })
-                    )
-                  )
-                )
-              ),
-
-              React.createElement('button', {
-                onClick: () => addItem(activeTeam),
-                className: 'mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2'
-              },
-                React.createElement(Plus, { size: 20 }),
-                'Add Development Item'
-              )
-            ) : React.createElement('div', { className: 'bg-white rounded-lg shadow-md p-6' },
-              React.createElement('h2', { className: 'text-2xl font-bold mb-4 text-gray-800' }, 'All Teams - Capacity Utilization'),
-              
-              React.createElement('div', { className: 'mb-6' },
-                React.createElement('div', { className: 'flex justify-start gap-0 mb-2', style: { marginLeft: '65px', width: 'calc(100% - 280px)' } },
-                  (() => {
-                    let currentMonth = '';
-                    const monthPositions = [];
-                    let startIdx = 0;
-                    
-                    allSprints.forEach((sprint, idx) => {
-                      if (sprint.month !== currentMonth) {
-                        if (currentMonth) {
-                          monthPositions.push({ month: currentMonth, start: startIdx, end: idx - 1 });
-                        }
-                        currentMonth = sprint.month;
-                        startIdx = idx;
-                      }
-                      if (idx === allSprints.length - 1) {
-                        monthPositions.push({ month: currentMonth, start: startIdx, end: idx });
-                      }
-                    });
-                    
-                    return monthPositions.map((pos, idx) => {
-                      const width = ((pos.end - pos.start + 1) / allSprints.length) * 100;
-                      return React.createElement('div', { 
-                        key: idx, 
-                        style: { width: `${width}%` }, 
-                        className: 'text-center font-bold text-gray-700 text-sm' 
-                      }, pos.month);
-                    });
-                  })()
-                ),
-                React.createElement(ResponsiveContainer, { width: '100%', height: 500 },
-                  React.createElement(LineChart, { data: getAllTeamsChartData() },
-                    React.createElement(CartesianGrid, { strokeDasharray: '3 3' }),
-                    React.createElement(XAxis, { dataKey: 'name' }),
-                    React.createElement(YAxis, { 
-                      yAxisId: 'left',
-                      label: { value: 'Person-Days', angle: -90, position: 'insideLeft' }
-                    }),
-                    React.createElement(YAxis, { 
-                      yAxisId: 'right',
-                      orientation: 'right',
-                      label: { value: 'Utilization %', angle: 90, position: 'insideRight' }
-                    }),
-                    React.createElement(Tooltip, { content: React.createElement(AllTeamsTooltip) }),
-                    React.createElement(Legend, { layout: 'vertical', align: 'right', verticalAlign: 'middle' }),
-                    teamOrder.map(teamName => {
-                      if (!teams[teamName]) return null;
-                      return React.createElement(React.Fragment, { key: teamName },
-                        React.createElement(Line, { 
-                          yAxisId: 'left',
-                          type: 'monotone',
-                          dataKey: `${teamName}_Allocated`,
-                          name: `${teamName} Allocated`,
-                          stroke: teams[teamName].color,
-                          strokeWidth: 2,
-                          dot: { r: 4 }
-                        }),
-                        React.createElement(Line, { 
-                          yAxisId: 'left',
-                          type: 'monotone',
-                          dataKey: `${teamName}_Capacity`,
-                          name: `${teamName} Capacity`,
-                          stroke: teams[teamName].color,
-                          strokeWidth: 1,
-                          strokeDasharray: '5 5',
-                          dot: false
-                        })
-                      );
-                    })
-                  )
-                )
-              ),
-
-              React.createElement('div', { className: 'mb-4 p-4 bg-gray-50 rounded' },
-                React.createElement('h3', { className: 'font-bold mb-2' }, 'Legend:'),
-                React.createElement('div', { className: 'grid grid-cols-2 gap-2 text-sm' },
-                  teamOrder.map(teamName => {
-                    if (!teams[teamName]) return null;
-                    return React.createElement('div', { key: teamName, className: 'flex items-center gap-2' },
-                      React.createElement('div', { className: 'flex items-center gap-1' },
-                        React.createElement('div', { className: 'w-8 h-0.5', style: { backgroundColor: teams[teamName].color } }),
-                        React.createElement('span', { style: { color: teams[teamName].color }, className: 'font-medium' }, teamName)
-                      ),
-                      React.createElement('span', { className: 'text-gray-500' }, '(Solid = Allocated, Dashed = Capacity)')
-                    );
-                  })
-                )
-              ),
-
-              React.createElement('div', { className: 'overflow-x-auto' },
-                React.createElement('table', { className: 'w-full border-collapse text-sm' },
-                  React.createElement('thead', null,
-                    React.createElement('tr', { className: 'bg-gray-200' },
-                      React.createElement('th', { className: 'border p-1 text-center sticky left-0 bg-gray-200 z-20 min-w-[150px]' }),
-                      React.createElement('th', { className: 'border p-1 text-left sticky left-[150px] bg-gray-200 z-20 min-w-[250px]' }),
-                      (() => {
-                        let currentMonth = '';
-                        let monthSpan = 0;
-                        const monthHeaders = [];
-                        
-                        allSprints.forEach((sprint, idx) => {
-                          if (sprint.month !== currentMonth) {
-                            if (monthSpan > 0) {
-                              monthHeaders.push({ month: currentMonth, span: monthSpan });
-                            }
-                            currentMonth = sprint.month;
-                            monthSpan = 1;
-                          } else {
-                            monthSpan++;
-                          }
-                          
-                          if (idx === allSprints.length - 1) {
-                            monthHeaders.push({ month: currentMonth, span: monthSpan });
-                          }
-                        });
-                        
-                        return monthHeaders.map((header, idx) =>
-                          React.createElement('th', { 
-                            key: idx, 
-                            colSpan: header.span, 
-                            className: 'border p-1 text-center font-bold text-gray-700' 
-                          }, header.month)
-                        );
-                      })(),
-                      React.createElement('th', { className: 'border p-1 text-center sticky right-0 bg-gray-200 z-20 w-[90px]' })
-                    ),
-                    React.createElement('tr', { className: 'bg-gray-100' },
-                      React.createElement('th', { className: 'border p-2 text-left sticky left-0 bg-gray-100 z-20 min-w-[150px]' }, 'Team'),
-                      React.createElement('th', { className: 'border p-2 text-left sticky left-[150px] bg-gray-100 z-20 min-w-[250px]' }, 'Development Item'),
-                      allSprints.map(sprint =>
-                        React.createElement('th', { 
-                          key: sprint.name, 
-                          className: 'border p-2 text-center w-[70px]',
-                          title: sprint.period
-                        }, sprint.name)
-                      ),
-                      React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 z-20 w-[90px]' }, 'Total Days')
-                    )
-                  ),
-                  React.createElement('tbody', null,
-                    teamOrder.map(teamName => {
-                      if (!teams[teamName]) return null;
-                      const t = teams[teamName];
-                      return t.developmentItems.filter(item => item.name).map((item, itemIdx) =>
-                        React.createElement('tr', { key: `${teamName}-${itemIdx}`, className: 'hover:bg-gray-50' },
-                          React.createElement('td', { 
-                            className: 'border p-2 font-medium sticky left-0 bg-white z-10',
-                            style: { color: t.color }
-                          }, teamName),
-                          React.createElement('td', { className: 'border p-2 sticky left-[150px] bg-white z-10' },
-                            React.createElement('div', { className: 'flex items-center gap-2' },
-                              React.createElement('div', { 
-                                className: 'w-4 h-4 rounded',
-                                style: { backgroundColor: item.color }
-                              }),
-                              item.name
-                            )
-                          ),
-                          allSprints.map(sprint => {
-                            const value = item.allocations[sprint.name] || '';
-                            const hasValue = value > 0;
-                            return React.createElement('td', { 
-                              key: sprint.name, 
-                              className: `border p-2 text-center ${hasValue ? 'bg-blue-50 font-medium' : ''}`,
-                              style: { width: '70px' }
-                            }, value);
-                          }),
-                          React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-0 bg-white z-10' },
-                            Object.values(item.allocations).reduce((sum, val) => sum + val, 0)
-                          )
-                        )
-                      );
-                    })
-                  )
-                )
-              )
-            )
-          );
+        // Firebase Konfiguration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAxqJDTt5LPqfWTyxnTv_A5fe-34ULhMpw",
+            authDomain: "developmentplanning-d0761.firebaseapp.com",
+            projectId: "developmentplanning-d0761",
+            storageBucket: "developmentplanning-d0761.firebasestorage.app",
+            messagingSenderId: "811254392085",
+            appId: "1:811254392085:web:5c5cec61391ec0fcae751c",
+            measurementId: "G-GJL4BPD36T"
         };
 
-        ReactDOM.render(React.createElement(ResourcePlanning), document.getElementById('root'));
+        // Firebase initialisieren
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        // Sprint-Daten für 2026
+        const SPRINTS = Array.from({ length: 26 }, (_, i) => {
+            const sprintNum = i + 1;
+            const startWeek = i * 2 + 1;
+            const endWeek = startWeek + 1;
+            return {
+                id: `2026-${String(sprintNum).padStart(2, '0')}`,
+                name: `Sprint ${sprintNum}`,
+                startWeek,
+                endWeek
+            };
+        });
+
+        function ResourcePlanner() {
+            const [teams, setTeams] = useState([]);
+            const [selectedTeam, setSelectedTeam] = useState(null);
+            const [devItems, setDevItems] = useState([]);
+            const [isLoading, setIsLoading] = useState(true);
+            const [showNewTeamDialog, setShowNewTeamDialog] = useState(false);
+            const [showNewItemDialog, setShowNewItemDialog] = useState(false);
+            const [newTeamName, setNewTeamName] = useState('');
+            const [newTeamCapacity, setNewTeamCapacity] = useState(10);
+
+            const [newItem, setNewItem] = useState({
+                title: '',
+                sprint: '',
+                complexity: 5
+            });
+
+            // Teams laden
+            useEffect(() => {
+                const unsubscribe = db.collection('teams').onSnapshot(snapshot => {
+                    const teamsData = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    setTeams(teamsData);
+                    if (!selectedTeam && teamsData.length > 0) {
+                        setSelectedTeam(teamsData[0].id);
+                    }
+                    setIsLoading(false);
+                });
+                return () => unsubscribe();
+            }, []);
+
+            // Dev Items laden
+            useEffect(() => {
+                if (!selectedTeam) return;
+                
+                const unsubscribe = db.collection('devItems')
+                    .where('teamId', '==', selectedTeam)
+                    .onSnapshot(snapshot => {
+                        const itemsData = snapshot.docs.map(doc => ({
+                            id: doc.id,
+                            ...doc.data()
+                        }));
+                        setDevItems(itemsData);
+                    });
+                return () => unsubscribe();
+            }, [selectedTeam]);
+
+            const addTeam = async () => {
+                if (!newTeamName.trim()) return;
+                await db.collection('teams').add({
+                    name: newTeamName,
+                    capacity: newTeamCapacity
+                });
+                setNewTeamName('');
+                setNewTeamCapacity(10);
+                setShowNewTeamDialog(false);
+            };
+
+            const addDevItem = async () => {
+                if (!newItem.title.trim() || !newItem.sprint) return;
+                await db.collection('devItems').add({
+                    teamId: selectedTeam,
+                    title: newItem.title,
+                    sprint: newItem.sprint,
+                    complexity: newItem.complexity,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                setNewItem({ title: '', sprint: '', complexity: 5 });
+                setShowNewItemDialog(false);
+            };
+
+            const deleteItem = async (itemId) => {
+                if (confirm('Item wirklich löschen?')) {
+                    await db.collection('devItems').doc(itemId).delete();
+                }
+            };
+
+            const deleteTeam = async (teamId) => {
+                if (confirm('Team und alle zugehörigen Items wirklich löschen?')) {
+                    // Items löschen
+                    const itemsSnapshot = await db.collection('devItems')
+                        .where('teamId', '==', teamId)
+                        .get();
+                    const batch = db.batch();
+                    itemsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+                    await batch.commit();
+                    
+                    // Team löschen
+                    await db.collection('teams').doc(teamId).delete();
+                    
+                    if (selectedTeam === teamId) {
+                        setSelectedTeam(teams[0]?.id || null);
+                    }
+                }
+            };
+
+            // Berechne Auslastung pro Sprint
+            const getSprintData = () => {
+                const currentTeam = teams.find(t => t.id === selectedTeam);
+                if (!currentTeam) return [];
+
+                return SPRINTS.map(sprint => {
+                    const items = devItems.filter(item => item.sprint === sprint.id);
+                    const totalComplexity = items.reduce((sum, item) => sum + item.complexity, 0);
+                    const utilization = (totalComplexity / currentTeam.capacity) * 100;
+                    
+                    return {
+                        sprint: sprint.name,
+                        capacity: currentTeam.capacity,
+                        used: totalComplexity,
+                        utilization: Math.round(utilization)
+                    };
+                });
+            };
+
+            const sprintData = getSprintData();
+
+            if (isLoading) {
+                return (
+                    <div className="flex items-center justify-center min-h-screen">
+                        <div className="text-xl">Lade Daten...</div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-gray-50 p-6">
+                    <div className="max-w-7xl mx-auto">
+                        <h1 className="text-3xl font-bold mb-6 text-gray-800">Development Ressourcenplanung 2026</h1>
+
+                        {/* Team Auswahl */}
+                        <div className="bg-white rounded-lg shadow p-6 mb-6">
+                            <div className="flex items-center gap-4 mb-4">
+                                <label className="font-semibold">Team:</label>
+                                <select 
+                                    value={selectedTeam || ''} 
+                                    onChange={(e) => setSelectedTeam(e.target.value)}
+                                    className="border rounded px-3 py-2 flex-1"
+                                >
+                                    {teams.map(team => (
+                                        <option key={team.id} value={team.id}>
+                                            {team.name} (Kapazität: {team.capacity} SP)
+                                        </option>
+                                    ))}
+                                </select>
+                                <button 
+                                    onClick={() => setShowNewTeamDialog(true)}
+                                    className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                                >
+                                    + Neues Team
+                                </button>
+                                {selectedTeam && (
+                                    <button 
+                                        onClick={() => deleteTeam(selectedTeam)}
+                                        className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                                    >
+                                        Team löschen
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Auslastungs-Chart */}
+                        {selectedTeam && (
+                            <div className="bg-white rounded-lg shadow p-6 mb-6">
+                                <h2 className="text-xl font-bold mb-4">Sprint-Auslastung</h2>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <BarChart data={sprintData}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="sprint" angle={-45} textAnchor="end" height={100} />
+                                        <YAxis />
+                                        <Tooltip />
+                                        <Legend />
+                                        <Bar dataKey="capacity" fill="#94a3b8" name="Kapazität" />
+                                        <Bar dataKey="used" name="Verwendet">
+                                            {sprintData.map((entry, index) => (
+                                                <Cell 
+                                                    key={`cell-${index}`} 
+                                                    fill={entry.utilization > 100 ? '#ef4444' : entry.utilization > 80 ? '#f59e0b' : '#10b981'} 
+                                                />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        )}
+
+                        {/* Dev Items */}
+                        {selectedTeam && (
+                            <div className="bg-white rounded-lg shadow p-6">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h2 className="text-xl font-bold">Development Items</h2>
+                                    <button 
+                                        onClick={() => setShowNewItemDialog(true)}
+                                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                                    >
+                                        + Neues Item
+                                    </button>
+                                </div>
+
+                                <div className="space-y-2">
+                                    {devItems.length === 0 ? (
+                                        <p className="text-gray-500 text-center py-8">Keine Items vorhanden</p>
+                                    ) : (
+                                        devItems.map(item => (
+                                            <div key={item.id} className="border rounded p-4 flex justify-between items-center hover:bg-gray-50">
+                                                <div>
+                                                    <div className="font-semibold">{item.title}</div>
+                                                    <div className="text-sm text-gray-600">
+                                                        Sprint: {SPRINTS.find(s => s.id === item.sprint)?.name} | 
+                                                        Komplexität: {item.complexity} SP
+                                                    </div>
+                                                </div>
+                                                <button 
+                                                    onClick={() => deleteItem(item.id)}
+                                                    className="text-red-500 hover:text-red-700"
+                                                >
+                                                    Löschen
+                                                </button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Dialog: Neues Team */}
+                        {showNewTeamDialog && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+                                <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                                    <h3 className="text-xl font-bold mb-4">Neues Team erstellen</h3>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block mb-2">Team Name:</label>
+                                            <input 
+                                                type="text"
+                                                value={newTeamName}
+                                                onChange={(e) => setNewTeamName(e.target.value)}
+                                                className="border rounded px-3 py-2 w-full"
+                                                placeholder="z.B. Team Alpha"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block mb-2">Kapazität (Story Points pro Sprint):</label>
+                                            <input 
+                                                type="number"
+                                                value={newTeamCapacity}
+                                                onChange={(e) => setNewTeamCapacity(parseInt(e.target.value))}
+                                                className="border rounded px-3 py-2 w-full"
+                                                min="1"
+                                            />
+                                        </div>
+                                        <div className="flex gap-2 justify-end">
+                                            <button 
+                                                onClick={() => setShowNewTeamDialog(false)}
+                                                className="px-4 py-2 border rounded hover:bg-gray-100"
+                                            >
+                                                Abbrechen
+                                            </button>
+                                            <button 
+                                                onClick={addTeam}
+                                                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                            >
+                                                Erstellen
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Dialog: Neues Item */}
+                        {showNewItemDialog && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+                                <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                                    <h3 className="text-xl font-bold mb-4">Neues Development Item</h3>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block mb-2">Titel:</label>
+                                            <input 
+                                                type="text"
+                                                value={newItem.title}
+                                                onChange={(e) => setNewItem({...newItem, title: e.target.value})}
+                                                className="border rounded px-3 py-2 w-full"
+                                                placeholder="z.B. User Login implementieren"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block mb-2">Sprint:</label>
+                                            <select 
+                                                value={newItem.sprint}
+                                                onChange={(e) => setNewItem({...newItem, sprint: e.target.value})}
+                                                className="border rounded px-3 py-2 w-full"
+                                            >
+                                                <option value="">Sprint auswählen...</option>
+                                                {SPRINTS.map(sprint => (
+                                                    <option key={sprint.id} value={sprint.id}>
+                                                        {sprint.name} (KW {sprint.startWeek}-{sprint.endWeek})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block mb-2">Komplexität (Story Points):</label>
+                                            <input 
+                                                type="number"
+                                                value={newItem.complexity}
+                                                onChange={(e) => setNewItem({...newItem, complexity: parseInt(e.target.value)})}
+                                                className="border rounded px-3 py-2 w-full"
+                                                min="1"
+                                            />
+                                        </div>
+                                        <div className="flex gap-2 justify-end">
+                                            <button 
+                                                onClick={() => setShowNewItemDialog(false)}
+                                                className="px-4 py-2 border rounded hover:bg-gray-100"
+                                            >
+                                                Abbrechen
+                                            </button>
+                                            <button 
+                                                onClick={addDevItem}
+                                                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                            >
+                                                Erstellen
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<ResourcePlanner />, document.getElementById('root'));
     </script>
 </body>
 </html>
