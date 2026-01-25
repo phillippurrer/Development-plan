@@ -29,7 +29,6 @@
         
         const { useState, useEffect } = React;
 
-        // Icon Components
         const Plus = ({ size = 24 }) => React.createElement('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '2' },
           React.createElement('line', { x1: '12', y1: '5', x2: '12', y2: '19' }),
           React.createElement('line', { x1: '5', y1: '12', x2: '19', y2: '12' })
@@ -134,28 +133,28 @@
               color: '#ef4444',
               employees: [{ name: 'Default Team', daysPerWeek: 40 }],
               sprints: generateSprints().map(s => ({ ...s, capacity: 80 })),
-              developmentItems: [{ name: '', allocations: {}, color: '#ef4444' }]
+              developmentItems: []
             },
             'Backoffice': {
               name: 'Backoffice',
               color: '#10b981',
               employees: [{ name: 'Default Team', daysPerWeek: 30 }],
               sprints: generateSprints().map(s => ({ ...s, capacity: 60 })),
-              developmentItems: [{ name: '', allocations: {}, color: '#10b981' }]
+              developmentItems: []
             },
             'Digital': {
               name: 'Digital',
               color: '#f59e0b',
               employees: [{ name: 'Default Team', daysPerWeek: 50 }],
               sprints: generateSprints().map(s => ({ ...s, capacity: 100 })),
-              developmentItems: [{ name: '', allocations: {}, color: '#f59e0b' }]
+              developmentItems: []
             },
             'Database': {
               name: 'Database',
               color: '#8b5cf6',
               employees: [{ name: 'Default Team', daysPerWeek: 20 }],
               sprints: generateSprints().map(s => ({ ...s, capacity: 40 })),
-              developmentItems: [{ name: '', allocations: {}, color: '#8b5cf6' }]
+              developmentItems: []
             }
           };
 
@@ -166,7 +165,6 @@
             '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16'
           ];
 
-          // Load from Firebase
           useEffect(() => {
             const loadData = async () => {
               setLoading(true);
@@ -182,7 +180,7 @@
                     Object.keys(data.teams).forEach(teamName => {
                       migratedTeams[teamName] = {
                         ...data.teams[teamName],
-                        employees: data.teams[teamName].employees || [{ name: 'Default Team', daysPerWeek: data.teams[teamName].defaultCapacity ? data.teams[teamName].defaultCapacity / 2 : 65 }]
+                        employees: data.teams[teamName].employees || [{ name: 'Default Team', daysPerWeek: data.teams[teamName].sprints?.[0]?.capacity / 2 || 65 }]
                       };
                     });
                     setTeams(migratedTeams);
@@ -203,7 +201,6 @@
             loadData();
           }, []);
 
-          // Auto-save to Firebase
           useEffect(() => {
             if (loading) return;
             
@@ -237,112 +234,284 @@
             };
           }, [teams, loading]);
 
-          // Continue with rest of code...
-          // (Due to character limits, the full code is too long. The pattern continues with all the functions from the preview version)
+          const addEmployee = (teamName) => {
+            setTeams(prev => {
+              const updated = { ...prev };
+              updated[teamName] = {
+                ...updated[teamName],
+                employees: [...updated[teamName].employees, { name: '', daysPerWeek: 0 }]
+              };
+              return updated;
+            });
+          };
 
-          // Render chart
-          useEffect(() => {
-            if (activeTeam === 'All Teams' && chartRef.current) {
-              const sprintNames = generateSprints();
-              const datasets = [];
+          const updateEmployee = (teamName, empIndex, field, value) => {
+            setTeams(prev => {
+              const updated = { ...prev };
+              const employees = [...updated[teamName].employees];
+              employees[empIndex] = { ...employees[empIndex], [field]: field === 'daysPerWeek' ? Number(value) || 0 : value };
               
-              Object.keys(teams).forEach(teamName => {
-                const team = teams[teamName];
-                
-                team.developmentItems.forEach((item, idx) => {
-                  if (item.name) {
-                    datasets.push({
-                      label: `${teamName}: ${item.name}`,
-                      data: sprintNames.map(sprint => item.allocations[sprint.name] || 0),
-                      backgroundColor: item.color || itemColors[idx % itemColors.length],
-                      stack: teamName
-                    });
-                  }
-                });
-              });
+              const totalCapacity = employees.reduce((sum, emp) => sum + (emp.daysPerWeek || 0), 0);
+              const sprints = updated[teamName].sprints.map(s => ({ ...s, capacity: totalCapacity }));
+              
+              updated[teamName] = {
+                ...updated[teamName],
+                employees,
+                sprints
+              };
+              return updated;
+            });
+          };
 
-              if (chartInstance.current) {
-                chartInstance.current.destroy();
+          const removeEmployee = (teamName, empIndex) => {
+            setTeams(prev => {
+              const updated = { ...prev };
+              const employees = updated[teamName].employees.filter((_, i) => i !== empIndex);
+              
+              const totalCapacity = employees.reduce((sum, emp) => sum + (emp.daysPerWeek || 0), 0);
+              const sprints = updated[teamName].sprints.map(s => ({ ...s, capacity: totalCapacity }));
+              
+              updated[teamName] = {
+                ...updated[teamName],
+                employees: employees.length > 0 ? employees : [{ name: '', daysPerWeek: 0 }],
+                sprints
+              };
+              return updated;
+            });
+          };
+
+          const addItem = (teamName) => {
+            setTeams(prev => {
+              const updated = { ...prev };
+              const items = updated[teamName].developmentItems;
+              const nextColor = itemColors[items.length % itemColors.length];
+              updated[teamName] = {
+                ...updated[teamName],
+                developmentItems: [...items, { name: '', allocations: {}, color: nextColor }]
+              };
+              return updated;
+            });
+          };
+
+          const removeItem = (teamName, itemIndex) => {
+            setTeams(prev => {
+              const updated = { ...prev };
+              updated[teamName] = {
+                ...updated[teamName],
+                developmentItems: updated[teamName].developmentItems.filter((_, i) => i !== itemIndex)
+              };
+              return updated;
+            });
+          };
+
+          const updateItemName = (teamName, itemIndex, value) => {
+            setTeams(prev => {
+              const updated = { ...prev };
+              const items = [...updated[teamName].developmentItems];
+              items[itemIndex] = { ...items[itemIndex], name: value };
+              updated[teamName] = {
+                ...updated[teamName],
+                developmentItems: items
+              };
+              return updated;
+            });
+          };
+
+          const updateItemColor = (teamName, itemIndex, value) => {
+            setTeams(prev => {
+              const updated = { ...prev };
+              const items = [...updated[teamName].developmentItems];
+              items[itemIndex] = { ...items[itemIndex], color: value };
+              updated[teamName] = {
+                ...updated[teamName],
+                developmentItems: items
+              };
+              return updated;
+            });
+          };
+
+          const updateAllocation = (teamName, itemIndex, sprintName, value) => {
+            setTeams(prev => {
+              const updated = { ...prev };
+              const items = [...updated[teamName].developmentItems];
+              const allocations = { ...items[itemIndex].allocations };
+              const numValue = Number(value) || 0;
+              
+              if (numValue === 0) {
+                delete allocations[sprintName];
+              } else {
+                allocations[sprintName] = numValue;
               }
+              
+              items[itemIndex] = { ...items[itemIndex], allocations };
+              updated[teamName] = {
+                ...updated[teamName],
+                developmentItems: items
+              };
+              return updated;
+            });
+          };
 
-              const labels = sprintNames.map(s => s.name);
+          const exportToCSV = () => {
+            const team = teams[activeTeam];
+            let csv = 'Development Item,Color,' + team.sprints.map(s => `${s.name} (${s.period})`).join(',') + ',Total Days\n';
+            
+            team.developmentItems.forEach(item => {
+              if (item.name) {
+                const total = Object.values(item.allocations).reduce((sum, val) => sum + val, 0);
+                csv += `"${item.name}","${item.color}",`;
+                csv += team.sprints.map(s => item.allocations[s.name] || '0').join(',');
+                csv += `,${total}\n`;
+              }
+            });
+            
+            csv += `\nCapacity,${team.sprints.map(() => team.sprints[0].capacity).join(',')}\n`;
+            
+            const totals = team.sprints.map(sprint => 
+              team.developmentItems.reduce((sum, item) => sum + (item.allocations[sprint.name] || 0), 0)
+            );
+            csv += `Total Allocated,${totals.join(',')}\n`;
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `sprint_planning_${activeTeam}_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+          };
 
-              chartInstance.current = new Chart(chartRef.current, {
-                type: 'bar',
-                data: {
-                  labels: labels,
-                  datasets: datasets
+          const clearAllData = async () => {
+            if (confirm('Are you sure you want to clear ALL data for ALL teams? This will delete everything from Firebase and reset to default.')) {
+              try {
+                await db.collection('multiTeamResourcePlanning').doc('teams').delete();
+                setTeams(initialTeams);
+                setLastSaved(null);
+                setSyncStatus('synced');
+                alert('All data cleared successfully!');
+              } catch (error) {
+                console.error('Error clearing data:', error);
+                alert('Error clearing data. Check console.');
+              }
+            }
+          };
+
+          useEffect(() => {
+            if (activeTeam === 'All Teams') return;
+            if (!chartRef.current) return;
+
+            const team = teams[activeTeam];
+            const sprints = team.sprints;
+            const items = team.developmentItems.filter(item => item.name);
+
+            if (chartInstance.current) {
+              chartInstance.current.destroy();
+            }
+
+            const datasets = items.map((item, idx) => ({
+              label: item.name,
+              data: sprints.map(sprint => item.allocations[sprint.name] || 0),
+              backgroundColor: item.color || itemColors[idx % itemColors.length]
+            }));
+
+            datasets.push({
+              label: 'Remaining Capacity',
+              data: sprints.map((sprint, idx) => {
+                const allocated = items.reduce((sum, item) => sum + (item.allocations[sprint.name] || 0), 0);
+                return Math.max(0, sprint.capacity - allocated);
+              }),
+              backgroundColor: '#e5e7eb'
+            });
+
+            const monthColors = {
+              'Jan': '#dbeafe', 'Feb': '#fce7f3', 'Mar': '#d1fae5',
+              'Apr': '#fef3c7', 'May': '#ede9fe', 'Jun': '#fce7f3',
+              'Jul': '#dbeafe', 'Aug': '#d1fae5', 'Sep': '#fef3c7',
+              'Oct': '#ede9fe', 'Nov': '#fce7f3', 'Dec': '#dbeafe'
+            };
+
+            chartInstance.current = new Chart(chartRef.current, {
+              type: 'bar',
+              data: {
+                labels: sprints.map(s => s.name),
+                datasets: datasets
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                  x: { 
+                    stacked: true,
+                    grid: {
+                      color: (context) => {
+                        const index = context.index;
+                        const sprint = sprints[index];
+                        return sprint ? monthColors[sprint.month] : '#e5e7eb';
+                      },
+                      lineWidth: 20
+                    }
+                  },
+                  y: {
+                    stacked: true,
+                    title: { display: true, text: 'Person-Days' }
+                  }
                 },
-                options: {
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  scales: {
-                    x: { 
-                      stacked: true
-                    },
-                    y: {
-                      stacked: true,
-                      title: {
-                        display: true,
-                        text: 'Person-Days'
+                plugins: {
+                  legend: {
+                    display: true,
+                    position: 'right',
+                    onClick: function(e, legendItem, legend) {
+                      const index = legendItem.datasetIndex;
+                      const chart = legend.chart;
+                      
+                      let visibleCount = 0;
+                      let lastVisible = -1;
+                      chart.data.datasets.forEach((dataset, i) => {
+                        if (chart.isDatasetVisible(i)) {
+                          visibleCount++;
+                          lastVisible = i;
+                        }
+                      });
+                      
+                      if (visibleCount === 1 && lastVisible === index) {
+                        chart.data.datasets.forEach((dataset, i) => {
+                          chart.show(i);
+                        });
+                      } else {
+                        chart.data.datasets.forEach((dataset, i) => {
+                          if (i === index) {
+                            chart.show(i);
+                          } else {
+                            chart.hide(i);
+                          }
+                        });
                       }
                     }
                   },
-                  plugins: {
-                    legend: {
-                      display: true,
-                      position: 'right',
-                      onClick: function(e, legendItem, legend) {
-                        const index = legendItem.datasetIndex;
-                        const chart = legend.chart;
-                        
-                        let visibleCount = 0;
-                        let lastVisible = -1;
-                        chart.data.datasets.forEach((dataset, i) => {
-                          if (chart.isDatasetVisible(i)) {
-                            visibleCount++;
-                            lastVisible = i;
-                          }
-                        });
-                        
-                        if (visibleCount === 1 && lastVisible === index) {
-                          chart.data.datasets.forEach((dataset, i) => {
-                            chart.show(i);
-                          });
-                        } else {
-                          chart.data.datasets.forEach((dataset, i) => {
-                            if (i === index) {
-                              chart.show(i);
-                            } else {
-                              chart.hide(i);
-                            }
-                          });
-                        }
-                      }
-                    },
-                    tooltip: {
-                      callbacks: {
-                        title: function(context) {
-                          const index = context[0].dataIndex;
-                          const sprint = sprintNames[index];
-                          return `${sprint.name} (${sprint.month})`;
-                        }
+                  tooltip: {
+                    callbacks: {
+                      title: function(context) {
+                        const index = context[0].dataIndex;
+                        const sprint = sprints[index];
+                        return `${sprint.name} - ${sprint.month} (${sprint.period})`;
+                      },
+                      footer: function(context) {
+                        const index = context[0].dataIndex;
+                        const sprint = sprints[index];
+                        const allocated = items.reduce((sum, item) => sum + (item.allocations[sprint.name] || 0), 0);
+                        return `Capacity: ${sprint.capacity} | Allocated: ${allocated} | Remaining: ${sprint.capacity - allocated}`;
                       }
                     }
                   }
                 }
-              });
+              }
+            });
 
-              return () => {
-                if (chartInstance.current) {
-                  chartInstance.current.destroy();
-                }
-              };
-            }
+            return () => {
+              if (chartInstance.current) {
+                chartInstance.current.destroy();
+              }
+            };
           }, [activeTeam, teams]);
-
-          // ... rest of the component code matches the preview version exactly
-          // (Using all the same functions: addEmployee, updateEmployee, etc.)
 
           if (loading) {
             return React.createElement('div', { className: 'flex items-center justify-center min-h-screen bg-gray-50' },
@@ -353,9 +522,311 @@
             );
           }
 
-          // Main render - same as preview version
+          const team = teams[activeTeam];
+          const allSprints = generateSprints();
+
           return React.createElement('div', { className: 'p-6 max-w-full mx-auto bg-gray-50 min-h-screen' },
-            // ... rest of render code
+            React.createElement('div', { className: 'mb-6 flex items-center justify-between' },
+              React.createElement('div', null,
+                React.createElement('h1', { className: 'text-3xl font-bold text-gray-800 mb-2' }, 'Sprint Resource Planning 2026'),
+                React.createElement('div', { className: 'flex items-center gap-4 text-sm' },
+                  React.createElement('div', { className: 'flex items-center gap-2' },
+                    React.createElement(Cloud, { size: 16 }),
+                    React.createElement('span', { 
+                      className: `font-medium ${
+                        syncStatus === 'synced' ? 'text-green-600' :
+                        syncStatus === 'saving' ? 'text-blue-600' :
+                        syncStatus === 'loading' ? 'text-gray-600' :
+                        'text-red-600'
+                      }` 
+                    }, 
+                      syncStatus === 'synced' ? 'Synced' :
+                      syncStatus === 'saving' ? 'Saving...' :
+                      syncStatus === 'loading' ? 'Loading...' :
+                      'Error'
+                    )
+                  ),
+                  lastSaved && React.createElement('span', { className: 'text-gray-500' },
+                    'Last saved: ' + lastSaved.toLocaleTimeString()
+                  )
+                )
+              ),
+              React.createElement('div', { className: 'flex gap-2' },
+                React.createElement('button', {
+                  onClick: () => setShowTeamSettings(!showTeamSettings),
+                  className: 'px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center gap-2'
+                },
+                  React.createElement(Settings, { size: 20 }),
+                  'Team Settings'
+                ),
+                React.createElement('button', {
+                  onClick: exportToCSV,
+                  disabled: activeTeam === 'All Teams',
+                  className: 'px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2'
+                },
+                  React.createElement(Download, { size: 20 }),
+                  'Export CSV'
+                ),
+                React.createElement('button', {
+                  onClick: clearAllData,
+                  className: 'px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-2'
+                },
+                  React.createElement(Trash2, { size: 20 }),
+                  'Clear All Data'
+                )
+              )
+            ),
+
+            showTeamSettings && React.createElement('div', { className: 'bg-white rounded-lg shadow-md p-6 mb-6' },
+              React.createElement('h2', { className: 'text-xl font-bold mb-4' }, 'Team Capacity Settings'),
+              React.createElement('div', { className: 'space-y-6' },
+                Object.keys(teams).map(teamName => {
+                  const t = teams[teamName];
+                  const totalCapacity = t.employees.reduce((sum, emp) => sum + (emp.daysPerWeek || 0), 0);
+                  
+                  return React.createElement('div', { key: teamName, className: 'border-b pb-4' },
+                    React.createElement('div', { className: 'flex items-center justify-between mb-3' },
+                      React.createElement('h3', { className: 'font-bold text-lg', style: { color: t.color } }, teamName),
+                      React.createElement('div', { className: 'text-sm text-gray-600' },
+                        `Total Sprint Capacity: ${totalCapacity} days`
+                      )
+                    ),
+                    React.createElement('div', { className: 'space-y-2' },
+                      t.employees.map((emp, empIdx) =>
+                        React.createElement('div', { key: empIdx, className: 'flex gap-2 items-center' },
+                          React.createElement('input', {
+                            type: 'text',
+                            value: emp.name,
+                            onChange: (e) => updateEmployee(teamName, empIdx, 'name', e.target.value),
+                            placeholder: 'Employee/Group name',
+                            className: 'border px-2 py-1 rounded flex-1'
+                          }),
+                          React.createElement('input', {
+                            type: 'number',
+                            value: emp.daysPerWeek || '',
+                            onChange: (e) => updateEmployee(teamName, empIdx, 'daysPerWeek', e.target.value),
+                            placeholder: 'Days/sprint',
+                            className: 'border px-2 py-1 rounded w-32'
+                          }),
+                          React.createElement('button', {
+                            onClick: () => removeEmployee(teamName, empIdx),
+                            className: 'p-1 text-red-600 hover:bg-red-50 rounded'
+                          }, React.createElement(Trash2, { size: 18 }))
+                        )
+                      ),
+                      React.createElement('button', {
+                        onClick: () => addEmployee(teamName),
+                        className: 'px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm flex items-center gap-1'
+                      },
+                        React.createElement(Plus, { size: 16 }),
+                        'Add Employee/Group'
+                      )
+                    )
+                  );
+                })
+              )
+            ),
+
+            React.createElement('div', { className: 'mb-6 flex gap-2 flex-wrap' },
+              Object.keys(teams).map(teamName =>
+                React.createElement('button', {
+                  key: teamName,
+                  onClick: () => setActiveTeam(teamName),
+                  className: `px-4 py-2 rounded font-medium ${activeTeam === teamName ? 'text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`,
+                  style: activeTeam === teamName ? { backgroundColor: teams[teamName].color } : {}
+                }, teamName)
+              ),
+              React.createElement('button', {
+                onClick: () => setActiveTeam('All Teams'),
+                className: `px-4 py-2 rounded font-medium ${activeTeam === 'All Teams' ? 'bg-gray-800 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`
+              }, 'All Teams')
+            ),
+
+            activeTeam !== 'All Teams' ? React.createElement('div', { className: 'bg-white rounded-lg shadow-md p-6 mb-6' },
+              React.createElement('div', { className: 'mb-6 flex items-center justify-between' },
+                React.createElement('h2', { className: 'text-2xl font-bold', style: { color: team.color } }, 
+                  `${team.name} Team - Resource Planning`
+                ),
+                React.createElement('div', { className: 'text-sm text-gray-600' },
+                  `Sprint Capacity: ${team.sprints[0].capacity} days`
+                )
+              ),
+
+              React.createElement('div', { className: 'mb-6' },
+                React.createElement('canvas', { ref: chartRef, style: { height: '400px' } })
+              ),
+
+              React.createElement('div', { className: 'overflow-x-auto' },
+                React.createElement('table', { className: 'w-full border-collapse text-sm' },
+                  React.createElement('thead', null,
+                    React.createElement('tr', { className: 'bg-gray-100' },
+                      React.createElement('th', { className: 'border p-2 text-left sticky left-0 bg-gray-100 z-20 min-w-[200px]' }, 'Development Item'),
+                      React.createElement('th', { className: 'border p-2 text-center sticky left-[200px] bg-gray-100 z-20 w-[80px]' }, 'Color'),
+                      team.sprints.map(sprint =>
+                        React.createElement('th', { 
+                          key: sprint.name, 
+                          className: 'border p-2 text-center min-w-[100px]',
+                          title: `${sprint.period} (${sprint.month})`
+                        }, 
+                          React.createElement('div', null, sprint.name),
+                          React.createElement('div', { className: 'text-xs text-gray-500 font-normal' }, sprint.month)
+                        )
+                      ),
+                      React.createElement('th', { className: 'border p-2 text-center sticky right-[90px] bg-gray-100 z-20 w-[90px]' }, 'Total Days'),
+                      React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 z-20 w-[90px]' }, 'Actions')
+                    )
+                  ),
+                  React.createElement('tbody', null,
+                    team.developmentItems.map((item, itemIdx) =>
+                      React.createElement('tr', { key: itemIdx, className: 'hover:bg-gray-50' },
+                        React.createElement('td', { className: 'border p-2 sticky left-0 bg-white z-10' },
+                          React.createElement('input', {
+                            type: 'text',
+                            value: item.name,
+                            onChange: (e) => updateItemName(activeTeam, itemIdx, e.target.value),
+                            placeholder: 'Enter development item name',
+                            className: 'w-full px-2 py-1 border rounded'
+                          })
+                        ),
+                        React.createElement('td', { className: 'border p-2 text-center sticky left-[200px] bg-white z-10' },
+                          React.createElement('input', {
+                            type: 'color',
+                            value: item.color || '#3b82f6',
+                            onChange: (e) => updateItemColor(activeTeam, itemIdx, e.target.value),
+                            className: 'w-12 h-8 cursor-pointer'
+                          })
+                        ),
+                        team.sprints.map(sprint =>
+                          React.createElement('td', { key: sprint.name, className: 'border p-2' },
+                            React.createElement('input', {
+                              type: 'number',
+                              min: '0',
+                              value: item.allocations[sprint.name] || '',
+                              onChange: (e) => updateAllocation(activeTeam, itemIdx, sprint.name, e.target.value),
+                              placeholder: '0',
+                              className: 'w-full px-2 py-1 border rounded text-center'
+                            })
+                          )
+                        ),
+                        React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-[90px] bg-white z-10' },
+                          Object.values(item.allocations).reduce((sum, val) => sum + val, 0)
+                        ),
+                        React.createElement('td', { className: 'border p-2 text-center sticky right-0 bg-white z-10' },
+                          React.createElement('button', {
+                            onClick: () => removeItem(activeTeam, itemIdx),
+                            className: 'p-1 text-red-600 hover:bg-red-50 rounded'
+                          }, React.createElement(Trash2, { size: 18 }))
+                        )
+                      )
+                    ),
+                    React.createElement('tr', { className: 'bg-blue-50 font-bold' },
+                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-blue-50 z-10' }, 'Capacity'),
+                      React.createElement('td', { className: 'border p-2 sticky left-[200px] bg-blue-50 z-10' }),
+                      team.sprints.map(sprint =>
+                        React.createElement('td', { key: sprint.name, className: 'border p-2 text-center' }, sprint.capacity)
+                      ),
+                      React.createElement('td', { className: 'border p-2 sticky right-[90px] bg-blue-50 z-10' }),
+                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-blue-50 z-10' })
+                    ),
+                    React.createElement('tr', { className: 'bg-yellow-50 font-bold' },
+                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-yellow-50 z-10' }, 'Total Allocated'),
+                      React.createElement('td', { className: 'border p-2 sticky left-[200px] bg-yellow-50 z-10' }),
+                      team.sprints.map(sprint => {
+                        const total = team.developmentItems.reduce((sum, item) => sum + (item.allocations[sprint.name] || 0), 0);
+                        const isOver = total > sprint.capacity;
+                        return React.createElement('td', { 
+                          key: sprint.name, 
+                          className: `border p-2 text-center ${isOver ? 'bg-red-100 text-red-700' : ''}` 
+                        }, total);
+                      }),
+                      React.createElement('td', { className: 'border p-2 sticky right-[90px] bg-yellow-50 z-10' }),
+                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-yellow-50 z-10' })
+                    ),
+                    React.createElement('tr', { className: 'bg-green-50 font-bold' },
+                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-green-50 z-10' }, 'Remaining Capacity'),
+                      React.createElement('td', { className: 'border p-2 sticky left-[200px] bg-green-50 z-10' }),
+                      team.sprints.map(sprint => {
+                        const allocated = team.developmentItems.reduce((sum, item) => sum + (item.allocations[sprint.name] || 0), 0);
+                        const remaining = sprint.capacity - allocated;
+                        const isNegative = remaining < 0;
+                        return React.createElement('td', { 
+                          key: sprint.name, 
+                          className: `border p-2 text-center ${isNegative ? 'bg-red-100 text-red-700' : ''}` 
+                        }, remaining);
+                      }),
+                      React.createElement('td', { className: 'border p-2 sticky right-[90px] bg-green-50 z-10' }),
+                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-green-50 z-10' })
+                    )
+                  )
+                )
+              ),
+
+              React.createElement('button', {
+                onClick: () => addItem(activeTeam),
+                className: 'mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2'
+              },
+                React.createElement(Plus, { size: 20 }),
+                'Add Development Item'
+              )
+            ) : React.createElement('div', { className: 'bg-white rounded-lg shadow-md p-6' },
+              React.createElement('h2', { className: 'text-2xl font-bold mb-4 text-gray-800' }, 'All Teams Overview'),
+              
+              React.createElement('div', { className: 'mb-6' },
+                React.createElement('canvas', { ref: chartRef, style: { height: '500px' } })
+              ),
+
+              React.createElement('div', { className: 'overflow-x-auto' },
+                React.createElement('table', { className: 'w-full border-collapse text-sm' },
+                  React.createElement('thead', null,
+                    React.createElement('tr', { className: 'bg-gray-100' },
+                      React.createElement('th', { className: 'border p-2 text-left sticky left-0 bg-gray-100 z-20 min-w-[150px]' }, 'Team'),
+                      React.createElement('th', { className: 'border p-2 text-left sticky left-[150px] bg-gray-100 z-20 min-w-[250px]' }, 'Development Item'),
+                      allSprints.map(sprint =>
+                        React.createElement('th', { 
+                          key: sprint.name, 
+                          className: 'border p-2 text-center min-w-[100px]',
+                          title: `${sprint.period} (${sprint.month})`
+                        }, 
+                          React.createElement('div', null, sprint.name),
+                          React.createElement('div', { className: 'text-xs text-gray-500 font-normal' }, sprint.month)
+                        )
+                      ),
+                      React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 z-20 w-[90px]' }, 'Total Days')
+                    )
+                  ),
+                  React.createElement('tbody', null,
+                    Object.keys(teams).map(teamName => {
+                      const t = teams[teamName];
+                      return t.developmentItems.filter(item => item.name).map((item, itemIdx) =>
+                        React.createElement('tr', { key: `${teamName}-${itemIdx}`, className: 'hover:bg-gray-50' },
+                          React.createElement('td', { 
+                            className: 'border p-2 font-medium sticky left-0 bg-white z-10',
+                            style: { color: t.color }
+                          }, teamName),
+                          React.createElement('td', { className: 'border p-2 sticky left-[150px] bg-white z-10' },
+                            React.createElement('div', { className: 'flex items-center gap-2' },
+                              React.createElement('div', { 
+                                className: 'w-4 h-4 rounded',
+                                style: { backgroundColor: item.color }
+                              }),
+                              item.name
+                            )
+                          ),
+                          allSprints.map(sprint =>
+                            React.createElement('td', { key: sprint.name, className: 'border p-2 text-center' },
+                              item.allocations[sprint.name] || ''
+                            )
+                          ),
+                          React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-0 bg-white z-10' },
+                            Object.values(item.allocations).reduce((sum, val) => sum + val, 0)
+                          )
+                        )
+                      );
+                    })
+                  )
+                )
+              )
+            )
           );
         };
 
