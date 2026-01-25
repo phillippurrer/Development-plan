@@ -56,16 +56,30 @@
           React.createElement('path', { d: 'M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m-2 2l-4.2 4.2m10.4 1l-4.2-4.2m-2-2l-4.2-4.2' })
         );
 
+        const GripVertical = ({ size = 24 }) => React.createElement('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '2' },
+          React.createElement('circle', { cx: '9', cy: '12', r: '1' }),
+          React.createElement('circle', { cx: '9', cy: '5', r: '1' }),
+          React.createElement('circle', { cx: '9', cy: '19', r: '1' }),
+          React.createElement('circle', { cx: '15', cy: '12', r: '1' }),
+          React.createElement('circle', { cx: '15', cy: '5', r: '1' }),
+          React.createElement('circle', { cx: '15', cy: '19', r: '1' })
+        );
+
         const ResourcePlanning = () => {
           const [loading, setLoading] = useState(true);
           const [lastSaved, setLastSaved] = useState(null);
           const [syncStatus, setSyncStatus] = useState('disconnected');
           const [activeTeam, setActiveTeam] = useState('Backend');
           const [showTeamSettings, setShowTeamSettings] = useState(false);
+          const [draggedItem, setDraggedItem] = useState(null);
           const chartRef = React.useRef(null);
+          const allTeamsChartRef = React.useRef(null);
           const chartInstance = React.useRef(null);
+          const allTeamsChartInstance = React.useRef(null);
           const saveTimeoutRef = React.useRef(null);
           
+          const teamOrder = ['Backend', 'Database', 'Terminal', 'Backoffice', 'Digital'];
+
           const generateSprints = () => {
             const sprintData = [
               { name: 'PTS26.02', start: '29.12.2025', end: '11.01.2026', month: 'Jan' },
@@ -128,8 +142,8 @@
               sprints: generateSprints().map(s => ({ ...s, capacity: 130 })),
               developmentItems: sampleBackendData
             },
-            'Retail Terminal': {
-              name: 'Retail Terminal',
+            'Terminal': {
+              name: 'Terminal',
               color: '#ef4444',
               employees: [{ name: 'Default Team', daysPerWeek: 40 }],
               sprints: generateSprints().map(s => ({ ...s, capacity: 80 })),
@@ -352,9 +366,43 @@
             });
           };
 
+          const handleDragStart = (e, teamName, itemIndex) => {
+            setDraggedItem({ teamName, itemIndex });
+            e.dataTransfer.effectAllowed = 'move';
+          };
+
+          const handleDragOver = (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+          };
+
+          const handleDrop = (e, teamName, targetIndex) => {
+            e.preventDefault();
+            
+            if (!draggedItem || draggedItem.teamName !== teamName) return;
+            
+            const sourceIndex = draggedItem.itemIndex;
+            if (sourceIndex === targetIndex) return;
+            
+            setTeams(prev => {
+              const updated = { ...prev };
+              const items = [...updated[teamName].developmentItems];
+              const [movedItem] = items.splice(sourceIndex, 1);
+              items.splice(targetIndex, 0, movedItem);
+              
+              updated[teamName] = {
+                ...updated[teamName],
+                developmentItems: items
+              };
+              return updated;
+            });
+            
+            setDraggedItem(null);
+          };
+
           const exportToCSV = () => {
             const team = teams[activeTeam];
-            let csv = 'Development Item,Color,' + team.sprints.map(s => `${s.name} (${s.period})`).join(',') + ',Total Days\n';
+            let csv = 'Development Item,Color,' + team.sprints.map(s => s.name).join(',') + ',Total Days\n';
             
             team.developmentItems.forEach(item => {
               if (item.name) {
@@ -395,6 +443,7 @@
             }
           };
 
+          // Single team chart
           useEffect(() => {
             if (activeTeam === 'All Teams') return;
             if (!chartRef.current) return;
@@ -422,12 +471,15 @@
               backgroundColor: '#e5e7eb'
             });
 
-            const monthColors = {
-              'Jan': '#dbeafe', 'Feb': '#fce7f3', 'Mar': '#d1fae5',
-              'Apr': '#fef3c7', 'May': '#ede9fe', 'Jun': '#fce7f3',
-              'Jul': '#dbeafe', 'Aug': '#d1fae5', 'Sep': '#fef3c7',
-              'Oct': '#ede9fe', 'Nov': '#fce7f3', 'Dec': '#dbeafe'
-            };
+            // Group sprints by month for annotation
+            const monthBoundaries = [];
+            let currentMonth = null;
+            sprints.forEach((sprint, idx) => {
+              if (sprint.month !== currentMonth) {
+                monthBoundaries.push({ index: idx, month: sprint.month });
+                currentMonth = sprint.month;
+              }
+            });
 
             chartInstance.current = new Chart(chartRef.current, {
               type: 'bar',
@@ -440,15 +492,7 @@
                 maintainAspectRatio: false,
                 scales: {
                   x: { 
-                    stacked: true,
-                    grid: {
-                      color: (context) => {
-                        const index = context.index;
-                        const sprint = sprints[index];
-                        return sprint ? monthColors[sprint.month] : '#e5e7eb';
-                      },
-                      lineWidth: 20
-                    }
+                    stacked: true
                   },
                   y: {
                     stacked: true,
@@ -492,7 +536,7 @@
                       title: function(context) {
                         const index = context[0].dataIndex;
                         const sprint = sprints[index];
-                        return `${sprint.name} - ${sprint.month} (${sprint.period})`;
+                        return `${sprint.name} - ${sprint.month}`;
                       },
                       footer: function(context) {
                         const index = context[0].dataIndex;
@@ -503,12 +547,190 @@
                     }
                   }
                 }
-              }
+              },
+              plugins: [{
+                id: 'monthLabels',
+                afterDraw: (chart) => {
+                  const ctx = chart.ctx;
+                  const xAxis = chart.scales.x;
+                  const yAxis = chart.scales.y;
+                  
+                  ctx.save();
+                  ctx.font = 'bold 14px Arial';
+                  ctx.textAlign = 'center';
+                  ctx.fillStyle = '#666';
+                  
+                  monthBoundaries.forEach((boundary, idx) => {
+                    const startIdx = boundary.index;
+                    const endIdx = idx < monthBoundaries.length - 1 ? monthBoundaries[idx + 1].index : sprints.length;
+                    
+                    const startX = xAxis.getPixelForValue(startIdx);
+                    const endX = xAxis.getPixelForValue(endIdx - 1);
+                    const centerX = (startX + endX) / 2;
+                    
+                    ctx.fillText(boundary.month, centerX, yAxis.top - 10);
+                  });
+                  
+                  ctx.restore();
+                }
+              }]
             });
 
             return () => {
               if (chartInstance.current) {
                 chartInstance.current.destroy();
+              }
+            };
+          }, [activeTeam, teams]);
+
+          // All Teams chart
+          useEffect(() => {
+            if (activeTeam !== 'All Teams') return;
+            if (!allTeamsChartRef.current) return;
+
+            const sprints = generateSprints();
+            const datasets = [];
+
+            teamOrder.forEach(teamName => {
+              if (!teams[teamName]) return;
+              const team = teams[teamName];
+              
+              team.developmentItems.filter(item => item.name).forEach((item, idx) => {
+                datasets.push({
+                  label: `${teamName}: ${item.name}`,
+                  data: sprints.map(sprint => item.allocations[sprint.name] || 0),
+                  backgroundColor: item.color,
+                  stack: teamName,
+                  teamColor: team.color
+                });
+              });
+
+              // Add capacity bar for each team
+              datasets.push({
+                label: `${teamName} Remaining`,
+                data: sprints.map(sprint => {
+                  const allocated = team.developmentItems.reduce((sum, item) => 
+                    sum + (item.allocations[sprint.name] || 0), 0);
+                  return Math.max(0, (team.sprints[0]?.capacity || 0) - allocated);
+                }),
+                backgroundColor: team.color + '33',
+                stack: teamName,
+                teamColor: team.color
+              });
+            });
+
+            if (allTeamsChartInstance.current) {
+              allTeamsChartInstance.current.destroy();
+            }
+
+            const monthBoundaries = [];
+            let currentMonth = null;
+            sprints.forEach((sprint, idx) => {
+              if (sprint.month !== currentMonth) {
+                monthBoundaries.push({ index: idx, month: sprint.month });
+                currentMonth = sprint.month;
+              }
+            });
+
+            allTeamsChartInstance.current = new Chart(allTeamsChartRef.current, {
+              type: 'bar',
+              data: {
+                labels: sprints.map(s => s.name),
+                datasets: datasets
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                  x: { 
+                    stacked: true
+                  },
+                  y: {
+                    stacked: true,
+                    title: { display: true, text: 'Person-Days' }
+                  }
+                },
+                plugins: {
+                  legend: {
+                    display: true,
+                    position: 'right',
+                    onClick: function(e, legendItem, legend) {
+                      const index = legendItem.datasetIndex;
+                      const chart = legend.chart;
+                      const clickedDataset = chart.data.datasets[index];
+                      const clickedTeam = clickedDataset.stack;
+                      
+                      let visibleInTeam = 0;
+                      let allVisible = 0;
+                      
+                      chart.data.datasets.forEach((dataset, i) => {
+                        if (chart.isDatasetVisible(i)) {
+                          allVisible++;
+                          if (dataset.stack === clickedTeam) {
+                            visibleInTeam++;
+                          }
+                        }
+                      });
+                      
+                      const teamDatasets = chart.data.datasets.filter(d => d.stack === clickedTeam);
+                      
+                      if (visibleInTeam === teamDatasets.length && allVisible === teamDatasets.length) {
+                        chart.data.datasets.forEach((dataset, i) => {
+                          chart.show(i);
+                        });
+                      } else {
+                        chart.data.datasets.forEach((dataset, i) => {
+                          if (dataset.stack === clickedTeam) {
+                            chart.show(i);
+                          } else {
+                            chart.hide(i);
+                          }
+                        });
+                      }
+                    }
+                  },
+                  tooltip: {
+                    callbacks: {
+                      title: function(context) {
+                        const index = context[0].dataIndex;
+                        const sprint = sprints[index];
+                        return `${sprint.name} - ${sprint.month}`;
+                      }
+                    }
+                  }
+                }
+              },
+              plugins: [{
+                id: 'monthLabels',
+                afterDraw: (chart) => {
+                  const ctx = chart.ctx;
+                  const xAxis = chart.scales.x;
+                  const yAxis = chart.scales.y;
+                  
+                  ctx.save();
+                  ctx.font = 'bold 14px Arial';
+                  ctx.textAlign = 'center';
+                  ctx.fillStyle = '#666';
+                  
+                  monthBoundaries.forEach((boundary, idx) => {
+                    const startIdx = boundary.index;
+                    const endIdx = idx < monthBoundaries.length - 1 ? monthBoundaries[idx + 1].index : sprints.length;
+                    
+                    const startX = xAxis.getPixelForValue(startIdx);
+                    const endX = xAxis.getPixelForValue(endIdx - 1);
+                    const centerX = (startX + endX) / 2;
+                    
+                    ctx.fillText(boundary.month, centerX, yAxis.top - 10);
+                  });
+                  
+                  ctx.restore();
+                }
+              }]
+            });
+
+            return () => {
+              if (allTeamsChartInstance.current) {
+                allTeamsChartInstance.current.destroy();
               }
             };
           }, [activeTeam, teams]);
@@ -522,7 +744,7 @@
             );
           }
 
-          const team = teams[activeTeam];
+          const team = activeTeam !== 'All Teams' ? teams[activeTeam] : null;
           const allSprints = generateSprints();
 
           return React.createElement('div', { className: 'p-6 max-w-full mx-auto bg-gray-50 min-h-screen' },
@@ -580,7 +802,8 @@
             showTeamSettings && React.createElement('div', { className: 'bg-white rounded-lg shadow-md p-6 mb-6' },
               React.createElement('h2', { className: 'text-xl font-bold mb-4' }, 'Team Capacity Settings'),
               React.createElement('div', { className: 'space-y-6' },
-                Object.keys(teams).map(teamName => {
+                teamOrder.map(teamName => {
+                  if (!teams[teamName]) return null;
                   const t = teams[teamName];
                   const totalCapacity = t.employees.reduce((sum, emp) => sum + (emp.daysPerWeek || 0), 0);
                   
@@ -628,14 +851,15 @@
             ),
 
             React.createElement('div', { className: 'mb-6 flex gap-2 flex-wrap' },
-              Object.keys(teams).map(teamName =>
-                React.createElement('button', {
+              teamOrder.map(teamName => {
+                if (!teams[teamName]) return null;
+                return React.createElement('button', {
                   key: teamName,
                   onClick: () => setActiveTeam(teamName),
                   className: `px-4 py-2 rounded font-medium ${activeTeam === teamName ? 'text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`,
                   style: activeTeam === teamName ? { backgroundColor: teams[teamName].color } : {}
-                }, teamName)
-              ),
+                }, teamName);
+              }),
               React.createElement('button', {
                 onClick: () => setActiveTeam('All Teams'),
                 className: `px-4 py-2 rounded font-medium ${activeTeam === 'All Teams' ? 'bg-gray-800 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`
@@ -660,17 +884,14 @@
                 React.createElement('table', { className: 'w-full border-collapse text-sm' },
                   React.createElement('thead', null,
                     React.createElement('tr', { className: 'bg-gray-100' },
-                      React.createElement('th', { className: 'border p-2 text-left sticky left-0 bg-gray-100 z-20 min-w-[200px]' }, 'Development Item'),
-                      React.createElement('th', { className: 'border p-2 text-center sticky left-[200px] bg-gray-100 z-20 w-[80px]' }, 'Color'),
+                      React.createElement('th', { className: 'border p-2 text-center sticky left-0 bg-gray-100 z-20 w-[40px]' }, ''),
+                      React.createElement('th', { className: 'border p-2 text-left sticky left-[40px] bg-gray-100 z-20 min-w-[200px]' }, 'Development Item'),
+                      React.createElement('th', { className: 'border p-2 text-center sticky left-[240px] bg-gray-100 z-20 w-[80px]' }, 'Color'),
                       team.sprints.map(sprint =>
                         React.createElement('th', { 
                           key: sprint.name, 
-                          className: 'border p-2 text-center min-w-[100px]',
-                          title: `${sprint.period} (${sprint.month})`
-                        }, 
-                          React.createElement('div', null, sprint.name),
-                          React.createElement('div', { className: 'text-xs text-gray-500 font-normal' }, sprint.month)
-                        )
+                          className: 'border p-2 text-center min-w-[100px]'
+                        }, sprint.name)
                       ),
                       React.createElement('th', { className: 'border p-2 text-center sticky right-[90px] bg-gray-100 z-20 w-[90px]' }, 'Total Days'),
                       React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 z-20 w-[90px]' }, 'Actions')
@@ -678,8 +899,18 @@
                   ),
                   React.createElement('tbody', null,
                     team.developmentItems.map((item, itemIdx) =>
-                      React.createElement('tr', { key: itemIdx, className: 'hover:bg-gray-50' },
-                        React.createElement('td', { className: 'border p-2 sticky left-0 bg-white z-10' },
+                      React.createElement('tr', { 
+                        key: itemIdx, 
+                        className: 'hover:bg-gray-50',
+                        draggable: true,
+                        onDragStart: (e) => handleDragStart(e, activeTeam, itemIdx),
+                        onDragOver: handleDragOver,
+                        onDrop: (e) => handleDrop(e, activeTeam, itemIdx)
+                      },
+                        React.createElement('td', { className: 'border p-2 text-center sticky left-0 bg-white z-10 cursor-move' },
+                          React.createElement(GripVertical, { size: 18 })
+                        ),
+                        React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-white z-10' },
                           React.createElement('input', {
                             type: 'text',
                             value: item.name,
@@ -688,7 +919,7 @@
                             className: 'w-full px-2 py-1 border rounded'
                           })
                         ),
-                        React.createElement('td', { className: 'border p-2 text-center sticky left-[200px] bg-white z-10' },
+                        React.createElement('td', { className: 'border p-2 text-center sticky left-[240px] bg-white z-10' },
                           React.createElement('input', {
                             type: 'color',
                             value: item.color || '#3b82f6',
@@ -720,38 +951,40 @@
                       )
                     ),
                     React.createElement('tr', { className: 'bg-blue-50 font-bold' },
-                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-blue-50 z-10' }, 'Capacity'),
-                      React.createElement('td', { className: 'border p-2 sticky left-[200px] bg-blue-50 z-10' }),
+                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-blue-50 z-10' }),
+                      React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-blue-50 z-10' }, 'Capacity'),
+                      React.createElement('td', { className: 'border p-2 sticky left-[240px] bg-blue-50 z-10' }),
                       team.sprints.map(sprint =>
                         React.createElement('td', { key: sprint.name, className: 'border p-2 text-center' }, sprint.capacity)
                       ),
                       React.createElement('td', { className: 'border p-2 sticky right-[90px] bg-blue-50 z-10' }),
                       React.createElement('td', { className: 'border p-2 sticky right-0 bg-blue-50 z-10' })
                     ),
-                    React.createElement('tr', { className: 'bg-yellow-50 font-bold' },
-                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-yellow-50 z-10' }, 'Total Allocated'),
-                      React.createElement('td', { className: 'border p-2 sticky left-[200px] bg-yellow-50 z-10' }),
+                    React.createElement('tr', { className: 'bg-white font-bold' },
+                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-white z-10' }),
+                      React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-white z-10' }, 'Total Allocated'),
+                      React.createElement('td', { className: 'border p-2 sticky left-[240px] bg-white z-10' }),
                       team.sprints.map(sprint => {
                         const total = team.developmentItems.reduce((sum, item) => sum + (item.allocations[sprint.name] || 0), 0);
-                        const isOver = total > sprint.capacity;
                         return React.createElement('td', { 
                           key: sprint.name, 
-                          className: `border p-2 text-center ${isOver ? 'bg-red-100 text-red-700' : ''}` 
+                          className: 'border p-2 text-center'
                         }, total);
                       }),
-                      React.createElement('td', { className: 'border p-2 sticky right-[90px] bg-yellow-50 z-10' }),
-                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-yellow-50 z-10' })
+                      React.createElement('td', { className: 'border p-2 sticky right-[90px] bg-white z-10' }),
+                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-white z-10' })
                     ),
                     React.createElement('tr', { className: 'bg-green-50 font-bold' },
-                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-green-50 z-10' }, 'Remaining Capacity'),
-                      React.createElement('td', { className: 'border p-2 sticky left-[200px] bg-green-50 z-10' }),
+                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-green-50 z-10' }),
+                      React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-green-50 z-10' }, 'Remaining Capacity'),
+                      React.createElement('td', { className: 'border p-2 sticky left-[240px] bg-green-50 z-10' }),
                       team.sprints.map(sprint => {
                         const allocated = team.developmentItems.reduce((sum, item) => sum + (item.allocations[sprint.name] || 0), 0);
                         const remaining = sprint.capacity - allocated;
                         const isNegative = remaining < 0;
                         return React.createElement('td', { 
                           key: sprint.name, 
-                          className: `border p-2 text-center ${isNegative ? 'bg-red-100 text-red-700' : ''}` 
+                          className: `border p-2 text-center ${isNegative ? 'bg-red-100 text-red-700' : 'bg-green-50'}` 
                         }, remaining);
                       }),
                       React.createElement('td', { className: 'border p-2 sticky right-[90px] bg-green-50 z-10' }),
@@ -772,7 +1005,7 @@
               React.createElement('h2', { className: 'text-2xl font-bold mb-4 text-gray-800' }, 'All Teams Overview'),
               
               React.createElement('div', { className: 'mb-6' },
-                React.createElement('canvas', { ref: chartRef, style: { height: '500px' } })
+                React.createElement('canvas', { ref: allTeamsChartRef, style: { height: '500px' } })
               ),
 
               React.createElement('div', { className: 'overflow-x-auto' },
@@ -784,18 +1017,15 @@
                       allSprints.map(sprint =>
                         React.createElement('th', { 
                           key: sprint.name, 
-                          className: 'border p-2 text-center min-w-[100px]',
-                          title: `${sprint.period} (${sprint.month})`
-                        }, 
-                          React.createElement('div', null, sprint.name),
-                          React.createElement('div', { className: 'text-xs text-gray-500 font-normal' }, sprint.month)
-                        )
+                          className: 'border p-2 text-center min-w-[100px]'
+                        }, sprint.name)
                       ),
                       React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 z-20 w-[90px]' }, 'Total Days')
                     )
                   ),
                   React.createElement('tbody', null,
-                    Object.keys(teams).map(teamName => {
+                    teamOrder.map(teamName => {
+                      if (!teams[teamName]) return null;
                       const t = teams[teamName];
                       return t.developmentItems.filter(item => item.name).map((item, itemIdx) =>
                         React.createElement('tr', { key: `${teamName}-${itemIdx}`, className: 'hover:bg-gray-50' },
