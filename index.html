@@ -269,21 +269,25 @@
           useEffect(() => {
             if (loading) return;
             
-            setTimeout(() => {
+            const timer = setTimeout(() => {
               if (activeTeam === 'All Teams') {
                 renderAllTeamsChart();
               } else if (teams[activeTeam]) {
                 renderTeamChart(teams[activeTeam]);
               }
             }, 100);
-          }, [activeTeam, teams, loading]);
+            
+            return () => clearTimeout(timer);
+          }, [activeTeam, loading]);
 
           const renderTeamChart = (team) => {
             const canvas = document.getElementById(`chart-${team.name}`);
             if (!canvas) return;
 
+            // Destroy existing chart
             if (chartInstancesRef.current[`chart-${team.name}`]) {
               chartInstancesRef.current[`chart-${team.name}`].destroy();
+              delete chartInstancesRef.current[`chart-${team.name}`];
             }
 
             const ctx = canvas.getContext('2d');
@@ -362,7 +366,8 @@
                       text: 'Days'
                     }
                   }
-                }
+                },
+                animation: false
               }
             });
           };
@@ -371,8 +376,10 @@
             const canvas = document.getElementById('chart-all-teams');
             if (!canvas) return;
 
+            // Destroy existing chart
             if (chartInstancesRef.current['chart-all-teams']) {
               chartInstancesRef.current['chart-all-teams'].destroy();
+              delete chartInstancesRef.current['chart-all-teams'];
             }
 
             const ctx = canvas.getContext('2d');
@@ -462,7 +469,8 @@
                       text: 'Days'
                     }
                   }
-                }
+                },
+                animation: false
               }
             });
           };
@@ -815,39 +823,46 @@
               ),
 
               React.createElement('div', { className: 'mb-6' },
-                React.createElement('div', { className: 'flex justify-start gap-0 mb-2', style: { marginLeft: '65px', width: 'calc(100% - 280px)' } },
-                  (() => {
-                    let currentMonth = '';
-                    const monthPositions = [];
-                    let startIdx = 0;
-                    
-                    team.sprints.forEach((sprint, idx) => {
-                      if (sprint.month !== currentMonth) {
-                        if (currentMonth) {
-                          monthPositions.push({ month: currentMonth, start: startIdx, end: idx - 1 });
+                React.createElement('div', { className: 'flex justify-between items-center mb-2' },
+                  React.createElement('div', { className: 'flex justify-start gap-0', style: { marginLeft: '65px', width: 'calc(100% - 280px)' } },
+                    (() => {
+                      let currentMonth = '';
+                      const monthPositions = [];
+                      let startIdx = 0;
+                      
+                      team.sprints.forEach((sprint, idx) => {
+                        if (sprint.month !== currentMonth) {
+                          if (currentMonth) {
+                            monthPositions.push({ month: currentMonth, start: startIdx, end: idx - 1 });
+                          }
+                          currentMonth = sprint.month;
+                          startIdx = idx;
                         }
-                        currentMonth = sprint.month;
-                        startIdx = idx;
-                      }
-                      if (idx === team.sprints.length - 1) {
-                        monthPositions.push({ month: currentMonth, start: startIdx, end: idx });
-                      }
-                    });
-                    
-                    return monthPositions.map((pos, idx) => {
-                      const width = ((pos.end - pos.start + 1) / team.sprints.length) * 100;
-                      return React.createElement('div', { 
-                        key: idx, 
-                        style: { width: `${width}%` }, 
-                        className: 'text-center font-bold text-gray-700 text-sm' 
-                      }, pos.month);
-                    });
-                  })()
+                        if (idx === team.sprints.length - 1) {
+                          monthPositions.push({ month: currentMonth, start: startIdx, end: idx });
+                        }
+                      });
+                      
+                      return monthPositions.map((pos, idx) => {
+                        const width = ((pos.end - pos.start + 1) / team.sprints.length) * 100;
+                        return React.createElement('div', { 
+                          key: idx, 
+                          style: { width: `${width}%` }, 
+                          className: 'text-center font-bold text-gray-700 text-sm' 
+                        }, pos.month);
+                      });
+                    })()
+                  ),
+                  React.createElement('button', {
+                    onClick: () => renderTeamChart(team),
+                    className: 'px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600'
+                  }, 'Refresh Chart')
                 ),
-                React.createElement('canvas', { 
-                  id: `chart-${team.name}`, 
-                  style: { height: '400px', width: '100%' } 
-                })
+                React.createElement('div', { style: { height: '400px', position: 'relative' } },
+                  React.createElement('canvas', { 
+                    id: `chart-${team.name}`
+                  })
+                )
               ),
 
               React.createElement('div', { className: 'overflow-x-auto' },
@@ -1027,39 +1042,46 @@
               React.createElement('h2', { className: 'text-2xl font-bold mb-4 text-gray-800' }, 'All Teams - Capacity Utilization'),
               
               React.createElement('div', { className: 'mb-6' },
-                React.createElement('div', { className: 'flex justify-start gap-0 mb-2', style: { marginLeft: '65px', width: 'calc(100% - 280px)' } },
-                  (() => {
-                    let currentMonth = '';
-                    const monthPositions = [];
-                    let startIdx = 0;
-                    
-                    allSprints.forEach((sprint, idx) => {
-                      if (sprint.month !== currentMonth) {
-                        if (currentMonth) {
-                          monthPositions.push({ month: currentMonth, start: startIdx, end: idx - 1 });
+                React.createElement('div', { className: 'flex justify-between items-center mb-2' },
+                  React.createElement('div', { className: 'flex justify-start gap-0', style: { marginLeft: '65px', width: 'calc(100% - 280px)' } },
+                    (() => {
+                      let currentMonth = '';
+                      const monthPositions = [];
+                      let startIdx = 0;
+                      
+                      allSprints.forEach((sprint, idx) => {
+                        if (sprint.month !== currentMonth) {
+                          if (currentMonth) {
+                            monthPositions.push({ month: currentMonth, start: startIdx, end: idx - 1 });
+                          }
+                          currentMonth = sprint.month;
+                          startIdx = idx;
                         }
-                        currentMonth = sprint.month;
-                        startIdx = idx;
-                      }
-                      if (idx === allSprints.length - 1) {
-                        monthPositions.push({ month: currentMonth, start: startIdx, end: idx });
-                      }
-                    });
-                    
-                    return monthPositions.map((pos, idx) => {
-                      const width = ((pos.end - pos.start + 1) / allSprints.length) * 100;
-                      return React.createElement('div', { 
-                        key: idx, 
-                        style: { width: `${width}%` }, 
-                        className: 'text-center font-bold text-gray-700 text-sm' 
-                      }, pos.month);
-                    });
-                  })()
+                        if (idx === allSprints.length - 1) {
+                          monthPositions.push({ month: currentMonth, start: startIdx, end: idx });
+                        }
+                      });
+                      
+                      return monthPositions.map((pos, idx) => {
+                        const width = ((pos.end - pos.start + 1) / allSprints.length) * 100;
+                        return React.createElement('div', { 
+                          key: idx, 
+                          style: { width: `${width}%` }, 
+                          className: 'text-center font-bold text-gray-700 text-sm' 
+                        }, pos.month);
+                      });
+                    })()
+                  ),
+                  React.createElement('button', {
+                    onClick: () => renderAllTeamsChart(),
+                    className: 'px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600'
+                  }, 'Refresh Chart')
                 ),
-                React.createElement('canvas', { 
-                  id: 'chart-all-teams', 
-                  style: { height: '500px', width: '100%' } 
-                })
+                React.createElement('div', { style: { height: '500px', position: 'relative' } },
+                  React.createElement('canvas', { 
+                    id: 'chart-all-teams'
+                  })
+                )
               ),
 
               React.createElement('div', { className: 'mb-4 p-4 bg-gray-50 rounded' },
