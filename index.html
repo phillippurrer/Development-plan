@@ -273,14 +273,17 @@
               if (activeTeam === 'All Teams') {
                 renderAllTeamsChart();
               } else if (teams[activeTeam]) {
-                renderTeamChart(teams[activeTeam]);
+                renderTeamChart(activeTeam);
               }
             }, 100);
             
             return () => clearTimeout(timer);
-          }, [activeTeam, loading]);
+          }, [activeTeam, teams, loading]);
 
-          const renderTeamChart = (team) => {
+          const renderTeamChart = (teamName) => {
+            const team = teams[teamName];
+            if (!team) return;
+            
             const canvas = document.getElementById(`chart-${team.name}`);
             if (!canvas) return;
 
@@ -330,7 +333,7 @@
                 },
                 plugins: {
                   legend: {
-                    position: 'bottom',
+                    position: 'right',
                     labels: {
                       boxWidth: 12,
                       padding: 8,
@@ -367,7 +370,12 @@
                     }
                   }
                 },
-                animation: false
+                animation: false,
+                layout: {
+                  padding: {
+                    right: 20
+                  }
+                }
               }
             });
           };
