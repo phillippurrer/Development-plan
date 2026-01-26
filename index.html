@@ -910,8 +910,8 @@
 
               React.createElement('div', { className: 'mb-6' },
                 React.createElement('div', { className: 'flex items-start gap-4' },
-                  React.createElement('div', { className: 'flex-1' },
-                    React.createElement('div', { className: 'flex justify-start gap-0 mb-2' },
+                  React.createElement('div', { className: 'flex-1 min-w-0' },
+                    React.createElement('div', { className: 'mb-2' },
                       (() => {
                         let currentMonth = '';
                         const monthPositions = [];
@@ -930,14 +930,16 @@
                           }
                         });
                         
-                        return monthPositions.map((pos, idx) => {
-                          const width = ((pos.end - pos.start + 1) / team.sprints.length) * 100;
-                          return React.createElement('div', { 
-                            key: idx, 
-                            style: { width: `${width}%` }, 
-                            className: 'text-center font-bold text-gray-700 text-sm' 
-                          }, pos.month);
-                        });
+                        return React.createElement('div', { className: 'flex justify-start gap-0' },
+                          monthPositions.map((pos, idx) => {
+                            const width = ((pos.end - pos.start + 1) / team.sprints.length) * 100;
+                            return React.createElement('div', { 
+                              key: idx, 
+                              style: { width: `${width}%` }, 
+                              className: 'text-center font-bold text-gray-700 text-sm' 
+                            }, pos.month);
+                          })
+                        );
                       })()
                     ),
                     React.createElement('div', { style: { height: '400px', position: 'relative' }, key: activeTeam },
@@ -949,7 +951,7 @@
                   ),
                   React.createElement('button', {
                     onClick: () => renderTeamChart(activeTeam),
-                    className: 'px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 h-8'
+                    className: 'px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 h-8 flex-shrink-0'
                   }, '↻')
                 )
               ),
@@ -990,8 +992,8 @@
                           }, header.month)
                         );
                       })(),
-                      React.createElement('th', { className: 'border p-1 text-center sticky right-[90px] bg-gray-200 z-20 w-[90px]' }),
-                      React.createElement('th', { className: 'border p-1 text-center sticky right-0 bg-gray-200 z-20 w-[90px]' })
+                      React.createElement('th', { className: 'border p-1 text-center sticky right-[40px] bg-gray-200 z-20 w-[90px]' }),
+                      React.createElement('th', { className: 'border p-1 text-center sticky right-0 bg-gray-200 z-20 w-[40px]' })
                     ),
                     React.createElement('tr', { className: 'bg-gray-100' },
                       React.createElement('th', { className: 'border p-2 text-center sticky left-0 bg-gray-100 z-20 w-[40px]' }),
@@ -1004,8 +1006,8 @@
                           title: sprint.period
                         }, sprint.name)
                       ),
-                      React.createElement('th', { className: 'border p-2 text-center sticky right-[90px] bg-gray-100 z-20 w-[90px]' }, 'Total Days'),
-                      React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 z-20 w-[90px]' }, 'Actions')
+                      React.createElement('th', { className: 'border p-2 text-center sticky right-[40px] bg-gray-100 z-20 w-[90px]' }, 'Total Days'),
+                      React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 z-20 w-[40px]' }, 'Actions')
                     )
                   ),
                   React.createElement('tbody', null,
@@ -1056,7 +1058,7 @@
                             })
                           );
                         }),
-                        React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-[90px] bg-white z-10' },
+                        React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-[40px] bg-white z-10' },
                           Object.values(item.allocations).reduce((sum, val) => sum + val, 0)
                         ),
                         React.createElement('td', { className: 'border p-2 text-center sticky right-0 bg-white z-10' },
@@ -1083,7 +1085,7 @@
                           })
                         )
                       ),
-                      React.createElement('td', { className: 'border p-2 sticky right-[90px] bg-blue-50 z-10' }),
+                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-blue-50 z-10' }),
                       React.createElement('td', { className: 'border p-2 sticky right-0 bg-blue-50 z-10' })
                     ),
                     React.createElement('tr', { className: 'bg-white font-bold' },
@@ -1097,7 +1099,7 @@
                           className: 'border p-2 text-center' 
                         }, total);
                       }),
-                      React.createElement('td', { className: 'border p-2 sticky right-[90px] bg-white z-10' }),
+                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-white z-10' }),
                       React.createElement('td', { className: 'border p-2 sticky right-0 bg-white z-10' })
                     ),
                     React.createElement('tr', { className: 'bg-green-50 font-bold' },
@@ -1113,7 +1115,7 @@
                           className: `border p-2 text-center ${isNegative ? 'bg-red-100 text-red-700' : 'bg-green-50'}` 
                         }, remaining);
                       }),
-                      React.createElement('td', { className: 'border p-2 sticky right-[90px] bg-green-50 z-10' }),
+                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-green-50 z-10' }),
                       React.createElement('td', { className: 'border p-2 sticky right-0 bg-green-50 z-10' })
                     )
                   )
@@ -1132,8 +1134,8 @@
               
               React.createElement('div', { className: 'mb-6' },
                 React.createElement('div', { className: 'flex items-start gap-4' },
-                  React.createElement('div', { className: 'flex-1' },
-                    React.createElement('div', { className: 'flex justify-start gap-0 mb-2' },
+                  React.createElement('div', { className: 'flex-1 min-w-0' },
+                    React.createElement('div', { className: 'mb-2' },
                       (() => {
                         let currentMonth = '';
                         const monthPositions = [];
@@ -1152,14 +1154,16 @@
                           }
                         });
                         
-                        return monthPositions.map((pos, idx) => {
-                          const width = ((pos.end - pos.start + 1) / allSprints.length) * 100;
-                          return React.createElement('div', { 
-                            key: idx, 
-                            style: { width: `${width}%` }, 
-                            className: 'text-center font-bold text-gray-700 text-sm' 
-                          }, pos.month);
-                        });
+                        return React.createElement('div', { className: 'flex justify-start gap-0' },
+                          monthPositions.map((pos, idx) => {
+                            const width = ((pos.end - pos.start + 1) / allSprints.length) * 100;
+                            return React.createElement('div', { 
+                              key: idx, 
+                              style: { width: `${width}%` }, 
+                              className: 'text-center font-bold text-gray-700 text-sm' 
+                            }, pos.month);
+                          })
+                        );
                       })()
                     ),
                     React.createElement('div', { style: { height: '500px', position: 'relative' } },
@@ -1170,7 +1174,7 @@
                   ),
                   React.createElement('button', {
                     onClick: () => renderAllTeamsChart(),
-                    className: 'px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 h-8'
+                    className: 'px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 h-8 flex-shrink-0'
                   }, '↻')
                 )
               ),
