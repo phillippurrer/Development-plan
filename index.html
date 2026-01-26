@@ -73,6 +73,7 @@
           const [showTeamSettings, setShowTeamSettings] = useState(false);
           const [draggedItem, setDraggedItem] = useState(null);
           const saveTimeoutRef = React.useRef(null);
+          const chartInstancesRef = React.useRef({});
           
           const teamOrder = ['Backend', 'Database', 'Terminal', 'Backoffice', 'Digital'];
 
@@ -265,6 +266,207 @@
             };
           }, [teams, loading]);
 
+          useEffect(() => {
+            if (loading) return;
+            
+            setTimeout(() => {
+              if (activeTeam === 'All Teams') {
+                renderAllTeamsChart();
+              } else if (teams[activeTeam]) {
+                renderTeamChart(teams[activeTeam]);
+              }
+            }, 100);
+          }, [activeTeam, teams, loading]);
+
+          const renderTeamChart = (team) => {
+            const canvas = document.getElementById(`chart-${team.name}`);
+            if (!canvas) return;
+
+            if (chartInstancesRef.current[`chart-${team.name}`]) {
+              chartInstancesRef.current[`chart-${team.name}`].destroy();
+            }
+
+            const ctx = canvas.getContext('2d');
+            
+            const datasets = team.developmentItems
+              .filter(item => item.name)
+              .map(item => ({
+                label: item.name,
+                data: team.sprints.map(sprint => item.allocations[sprint.name] || 0),
+                backgroundColor: item.color,
+                borderColor: item.color,
+                borderWidth: 1,
+                stack: 'allocations'
+              }));
+
+            datasets.push({
+              label: 'Capacity',
+              data: team.sprints.map(sprint => sprint.capacity),
+              type: 'line',
+              borderColor: '#94a3b8',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              borderDash: [5, 5],
+              pointRadius: 3,
+              fill: false
+            });
+
+            chartInstancesRef.current[`chart-${team.name}`] = new Chart(ctx, {
+              type: 'bar',
+              data: {
+                labels: team.sprints.map(s => s.name),
+                datasets: datasets
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                  mode: 'index',
+                  intersect: false
+                },
+                plugins: {
+                  legend: {
+                    position: 'bottom',
+                    labels: {
+                      boxWidth: 12,
+                      padding: 8,
+                      font: { size: 10 }
+                    }
+                  },
+                  tooltip: {
+                    callbacks: {
+                      footer: (tooltipItems) => {
+                        const sprintIndex = tooltipItems[0].dataIndex;
+                        const allocated = datasets
+                          .filter(d => d.stack === 'allocations')
+                          .reduce((sum, d) => sum + d.data[sprintIndex], 0);
+                        const capacity = team.sprints[sprintIndex].capacity;
+                        const remaining = capacity - allocated;
+                        return `\nTotal Allocated: ${allocated}\nCapacity: ${capacity}\nRemaining: ${remaining}`;
+                      }
+                    }
+                  }
+                },
+                scales: {
+                  x: {
+                    stacked: true,
+                    ticks: {
+                      font: { size: 9 }
+                    }
+                  },
+                  y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    title: {
+                      display: true,
+                      text: 'Days'
+                    }
+                  }
+                }
+              }
+            });
+          };
+
+          const renderAllTeamsChart = () => {
+            const canvas = document.getElementById('chart-all-teams');
+            if (!canvas) return;
+
+            if (chartInstancesRef.current['chart-all-teams']) {
+              chartInstancesRef.current['chart-all-teams'].destroy();
+            }
+
+            const ctx = canvas.getContext('2d');
+            const allSprints = generateSprints();
+            const datasets = [];
+
+            teamOrder.forEach(teamName => {
+              if (!teams[teamName]) return;
+              const team = teams[teamName];
+
+              const allocatedData = allSprints.map(sprint => {
+                return team.developmentItems.reduce((sum, item) => {
+                  return sum + (item.allocations[sprint.name] || 0);
+                }, 0);
+              });
+
+              datasets.push({
+                label: `${teamName} - Allocated`,
+                data: allocatedData,
+                type: 'line',
+                borderColor: team.color,
+                backgroundColor: team.color + '40',
+                borderWidth: 2,
+                pointRadius: 2,
+                fill: false
+              });
+
+              const capacityData = allSprints.map(sprint => {
+                const sprintData = team.sprints.find(s => s.name === sprint.name);
+                return sprintData ? sprintData.capacity : 0;
+              });
+
+              datasets.push({
+                label: `${teamName} - Capacity`,
+                data: capacityData,
+                type: 'line',
+                borderColor: team.color,
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointRadius: 0,
+                fill: false
+              });
+            });
+
+            chartInstancesRef.current['chart-all-teams'] = new Chart(ctx, {
+              type: 'line',
+              data: {
+                labels: allSprints.map(s => s.name),
+                datasets: datasets
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                  mode: 'index',
+                  intersect: false
+                },
+                plugins: {
+                  legend: {
+                    position: 'bottom',
+                    labels: {
+                      boxWidth: 12,
+                      padding: 6,
+                      font: { size: 9 }
+                    }
+                  },
+                  tooltip: {
+                    callbacks: {
+                      title: (tooltipItems) => {
+                        const sprint = allSprints[tooltipItems[0].dataIndex];
+                        return `${sprint.name} (${sprint.period})`;
+                      }
+                    }
+                  }
+                },
+                scales: {
+                  x: {
+                    ticks: {
+                      font: { size: 9 }
+                    }
+                  },
+                  y: {
+                    beginAtZero: true,
+                    title: {
+                      display: true,
+                      text: 'Days'
+                    }
+                  }
+                }
+              }
+            });
+          };
+
           const addEmployee = (teamName) => {
             setTeams(prev => {
               const updated = { ...prev };
@@ -433,23 +635,23 @@
 
           const exportToCSV = () => {
             const team = teams[activeTeam];
-            let csv = 'Development Item,Color,' + team.sprints.map(s => s.name).join(',') + ',Total Days\\n';
+            let csv = 'Development Item,Color,' + team.sprints.map(s => s.name).join(',') + ',Total Days\n';
             
             team.developmentItems.forEach(item => {
               if (item.name) {
                 const total = Object.values(item.allocations).reduce((sum, val) => sum + val, 0);
                 csv += `"${item.name}","${item.color}",`;
                 csv += team.sprints.map(s => item.allocations[s.name] || '0').join(',');
-                csv += `,${total}\\n`;
+                csv += `,${total}\n`;
               }
             });
             
-            csv += `\\nCapacity,${team.sprints.map(s => s.capacity).join(',')}\\n`;
+            csv += `\nCapacity,${team.sprints.map(s => s.capacity).join(',')}\n`;
             
             const totals = team.sprints.map(sprint => 
               team.developmentItems.reduce((sum, item) => sum + (item.allocations[sprint.name] || 0), 0)
             );
-            csv += `Total Allocated,${totals.join(',')}\\n`;
+            csv += `Total Allocated,${totals.join(',')}\n`;
             
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
@@ -967,33 +1169,7 @@
           );
         };
 
-        // Initialize charts after render
-        let chartsInitialized = false;
-        
-        const initializeCharts = () => {
-          if (chartsInitialized) return;
-          chartsInitialized = true;
-          
-          // This will be called after initial render
-          setTimeout(() => {
-            const activeTeamElement = document.querySelector('.bg-blue-600, .bg-gray-800');
-            if (!activeTeamElement) return;
-            
-            const teamName = activeTeamElement.textContent.trim();
-            
-            if (teamName === 'All Teams') {
-              // All Teams chart will be rendered when switching to All Teams
-            } else {
-              // Single team chart initialization
-              // Chart.js initialization would happen here in production
-            }
-          }, 100);
-        };
-
         ReactDOM.render(React.createElement(ResourcePlanning), document.getElementById('root'));
-        
-        // Initialize charts after render
-        setTimeout(initializeCharts, 200);
     </script>
 </body>
 </html>
