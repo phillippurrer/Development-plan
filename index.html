@@ -911,36 +911,37 @@
               React.createElement('div', { className: 'mb-6' },
                 React.createElement('div', { className: 'flex items-start gap-4' },
                   React.createElement('div', { className: 'flex-1 min-w-0' },
-                    React.createElement('div', { className: 'mb-2' },
-                      (() => {
-                        let currentMonth = '';
-                        const monthPositions = [];
-                        let startIdx = 0;
-                        
-                        team.sprints.forEach((sprint, idx) => {
-                          if (sprint.month !== currentMonth) {
-                            if (currentMonth) {
-                              monthPositions.push({ month: currentMonth, start: startIdx, end: idx - 1 });
+                    React.createElement('div', { className: 'flex items-start mb-2' },
+                      React.createElement('div', { className: 'flex justify-start gap-0', style: { width: 'calc(100% - 220px)' } },
+                        (() => {
+                          let currentMonth = '';
+                          const monthPositions = [];
+                          let startIdx = 0;
+                          
+                          team.sprints.forEach((sprint, idx) => {
+                            if (sprint.month !== currentMonth) {
+                              if (currentMonth) {
+                                monthPositions.push({ month: currentMonth, start: startIdx, end: idx - 1 });
+                              }
+                              currentMonth = sprint.month;
+                              startIdx = idx;
                             }
-                            currentMonth = sprint.month;
-                            startIdx = idx;
-                          }
-                          if (idx === team.sprints.length - 1) {
-                            monthPositions.push({ month: currentMonth, start: startIdx, end: idx });
-                          }
-                        });
-                        
-                        return React.createElement('div', { className: 'flex justify-start gap-0' },
-                          monthPositions.map((pos, idx) => {
+                            if (idx === team.sprints.length - 1) {
+                              monthPositions.push({ month: currentMonth, start: startIdx, end: idx });
+                            }
+                          });
+                          
+                          return monthPositions.map((pos, idx) => {
                             const width = ((pos.end - pos.start + 1) / team.sprints.length) * 100;
                             return React.createElement('div', { 
                               key: idx, 
                               style: { width: `${width}%` }, 
                               className: 'text-center font-bold text-gray-700 text-sm' 
                             }, pos.month);
-                          })
-                        );
-                      })()
+                          });
+                        })()
+                      ),
+                      React.createElement('div', { style: { width: '220px' } })
                     ),
                     React.createElement('div', { style: { height: '400px', position: 'relative' }, key: activeTeam },
                       React.createElement('canvas', { 
@@ -992,7 +993,7 @@
                           }, header.month)
                         );
                       })(),
-                      React.createElement('th', { className: 'border p-1 text-center sticky right-[40px] bg-gray-200 z-20 w-[90px]' }),
+                      React.createElement('th', { className: 'border p-1 text-center sticky right-[40px] bg-gray-200 z-20 w-[100px]' }),
                       React.createElement('th', { className: 'border p-1 text-center sticky right-0 bg-gray-200 z-20 w-[40px]' })
                     ),
                     React.createElement('tr', { className: 'bg-gray-100' },
@@ -1006,7 +1007,7 @@
                           title: sprint.period
                         }, sprint.name)
                       ),
-                      React.createElement('th', { className: 'border p-2 text-center sticky right-[40px] bg-gray-100 z-20 w-[90px]' }, 'Total Days'),
+                      React.createElement('th', { className: 'border p-2 text-center sticky right-[40px] bg-gray-100 z-20 w-[100px]' }, 'Total Days'),
                       React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 z-20 w-[40px]' }, 'Actions')
                     )
                   ),
@@ -1058,7 +1059,7 @@
                             })
                           );
                         }),
-                        React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-[40px] bg-white z-10' },
+                        React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-[40px] bg-white z-10 w-[100px]' },
                           Object.values(item.allocations).reduce((sum, val) => sum + val, 0)
                         ),
                         React.createElement('td', { className: 'border p-2 text-center sticky right-0 bg-white z-10' },
@@ -1085,7 +1086,7 @@
                           })
                         )
                       ),
-                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-blue-50 z-10' }),
+                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-blue-50 z-10 w-[100px]' }),
                       React.createElement('td', { className: 'border p-2 sticky right-0 bg-blue-50 z-10' })
                     ),
                     React.createElement('tr', { className: 'bg-white font-bold' },
@@ -1099,7 +1100,7 @@
                           className: 'border p-2 text-center' 
                         }, total);
                       }),
-                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-white z-10' }),
+                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-white z-10 w-[100px]' }),
                       React.createElement('td', { className: 'border p-2 sticky right-0 bg-white z-10' })
                     ),
                     React.createElement('tr', { className: 'bg-green-50 font-bold' },
@@ -1115,7 +1116,7 @@
                           className: `border p-2 text-center ${isNegative ? 'bg-red-100 text-red-700' : 'bg-green-50'}` 
                         }, remaining);
                       }),
-                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-green-50 z-10' }),
+                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-green-50 z-10 w-[100px]' }),
                       React.createElement('td', { className: 'border p-2 sticky right-0 bg-green-50 z-10' })
                     )
                   )
@@ -1135,36 +1136,37 @@
               React.createElement('div', { className: 'mb-6' },
                 React.createElement('div', { className: 'flex items-start gap-4' },
                   React.createElement('div', { className: 'flex-1 min-w-0' },
-                    React.createElement('div', { className: 'mb-2' },
-                      (() => {
-                        let currentMonth = '';
-                        const monthPositions = [];
-                        let startIdx = 0;
-                        
-                        allSprints.forEach((sprint, idx) => {
-                          if (sprint.month !== currentMonth) {
-                            if (currentMonth) {
-                              monthPositions.push({ month: currentMonth, start: startIdx, end: idx - 1 });
+                    React.createElement('div', { className: 'flex items-start mb-2' },
+                      React.createElement('div', { className: 'flex justify-start gap-0', style: { width: 'calc(100% - 180px)' } },
+                        (() => {
+                          let currentMonth = '';
+                          const monthPositions = [];
+                          let startIdx = 0;
+                          
+                          allSprints.forEach((sprint, idx) => {
+                            if (sprint.month !== currentMonth) {
+                              if (currentMonth) {
+                                monthPositions.push({ month: currentMonth, start: startIdx, end: idx - 1 });
+                              }
+                              currentMonth = sprint.month;
+                              startIdx = idx;
                             }
-                            currentMonth = sprint.month;
-                            startIdx = idx;
-                          }
-                          if (idx === allSprints.length - 1) {
-                            monthPositions.push({ month: currentMonth, start: startIdx, end: idx });
-                          }
-                        });
-                        
-                        return React.createElement('div', { className: 'flex justify-start gap-0' },
-                          monthPositions.map((pos, idx) => {
+                            if (idx === allSprints.length - 1) {
+                              monthPositions.push({ month: currentMonth, start: startIdx, end: idx });
+                            }
+                          });
+                          
+                          return monthPositions.map((pos, idx) => {
                             const width = ((pos.end - pos.start + 1) / allSprints.length) * 100;
                             return React.createElement('div', { 
                               key: idx, 
                               style: { width: `${width}%` }, 
                               className: 'text-center font-bold text-gray-700 text-sm' 
                             }, pos.month);
-                          })
-                        );
-                      })()
+                          });
+                        })()
+                      ),
+                      React.createElement('div', { style: { width: '180px' } })
                     ),
                     React.createElement('div', { style: { height: '500px', position: 'relative' } },
                       React.createElement('canvas', { 
