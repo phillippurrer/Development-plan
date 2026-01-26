@@ -269,28 +269,38 @@
           useEffect(() => {
             if (loading) return;
             
+            // Clean up all previous charts
+            Object.keys(chartInstancesRef.current).forEach(key => {
+              if (chartInstancesRef.current[key]) {
+                chartInstancesRef.current[key].destroy();
+                delete chartInstancesRef.current[key];
+              }
+            });
+            
             const timer = setTimeout(() => {
               if (activeTeam === 'All Teams') {
                 renderAllTeamsChart();
               } else if (teams[activeTeam]) {
                 renderTeamChart(activeTeam);
               }
-            }, 100);
+            }, 150);
             
-            return () => clearTimeout(timer);
-          }, [activeTeam, teams, loading]);
+            return () => {
+              clearTimeout(timer);
+            };
+          }, [activeTeam]);
 
           const renderTeamChart = (teamName) => {
             const team = teams[teamName];
             if (!team) return;
             
-            const canvas = document.getElementById(`chart-${team.name}`);
+            const canvas = document.getElementById('single-team-chart');
             if (!canvas) return;
 
             // Destroy existing chart
-            if (chartInstancesRef.current[`chart-${team.name}`]) {
-              chartInstancesRef.current[`chart-${team.name}`].destroy();
-              delete chartInstancesRef.current[`chart-${team.name}`];
+            if (chartInstancesRef.current['single-team-chart']) {
+              chartInstancesRef.current['single-team-chart'].destroy();
+              delete chartInstancesRef.current['single-team-chart'];
             }
 
             const ctx = canvas.getContext('2d');
@@ -318,7 +328,7 @@
               fill: false
             });
 
-            chartInstancesRef.current[`chart-${team.name}`] = new Chart(ctx, {
+            chartInstancesRef.current['single-team-chart'] = new Chart(ctx, {
               type: 'bar',
               data: {
                 labels: team.sprints.map(s => s.name),
@@ -394,10 +404,12 @@
             const allSprints = generateSprints();
             const datasets = [];
 
+            // Für jedes Team: Allocated und Capacity
             teamOrder.forEach(teamName => {
               if (!teams[teamName]) return;
               const team = teams[teamName];
 
+              // Allocated als gestapelte Bar
               const allocatedData = allSprints.map(sprint => {
                 return team.developmentItems.reduce((sum, item) => {
                   return sum + (item.allocations[sprint.name] || 0);
@@ -405,36 +417,37 @@
               });
 
               datasets.push({
-                label: `${teamName} - Allocated`,
+                label: `${teamName} - Used`,
                 data: allocatedData,
-                type: 'line',
+                backgroundColor: team.color,
                 borderColor: team.color,
-                backgroundColor: team.color + '40',
-                borderWidth: 2,
-                pointRadius: 2,
-                fill: false
+                borderWidth: 1,
+                stack: teamName,
+                type: 'bar'
               });
 
-              const capacityData = allSprints.map(sprint => {
+              // Capacity als Rest der Bar
+              const capacityData = allSprints.map((sprint, idx) => {
                 const sprintData = team.sprints.find(s => s.name === sprint.name);
-                return sprintData ? sprintData.capacity : 0;
+                const capacity = sprintData ? sprintData.capacity : 0;
+                const used = allocatedData[idx];
+                return Math.max(0, capacity - used);
               });
 
               datasets.push({
-                label: `${teamName} - Capacity`,
+                label: `${teamName} - Available`,
                 data: capacityData,
-                type: 'line',
+                backgroundColor: team.color + '30',
                 borderColor: team.color,
-                backgroundColor: 'transparent',
-                borderWidth: 2,
-                borderDash: [5, 5],
-                pointRadius: 0,
-                fill: false
+                borderWidth: 1,
+                borderDash: [3, 3],
+                stack: teamName,
+                type: 'bar'
               });
             });
 
             chartInstancesRef.current['chart-all-teams'] = new Chart(ctx, {
-              type: 'line',
+              type: 'bar',
               data: {
                 labels: allSprints.map(s => s.name),
                 datasets: datasets
@@ -448,7 +461,7 @@
                 },
                 plugins: {
                   legend: {
-                    position: 'bottom',
+                    position: 'right',
                     labels: {
                       boxWidth: 12,
                       padding: 6,
@@ -460,17 +473,35 @@
                       title: (tooltipItems) => {
                         const sprint = allSprints[tooltipItems[0].dataIndex];
                         return `${sprint.name} (${sprint.period})`;
+                      },
+                      afterBody: (tooltipItems) => {
+                        const sprintIndex = tooltipItems[0].dataIndex;
+                        let summary = '\n--- Summary ---';
+                        teamOrder.forEach(teamName => {
+                          if (!teams[teamName]) return;
+                          const team = teams[teamName];
+                          const allocated = team.developmentItems.reduce((sum, item) => {
+                            return sum + (item.allocations[allSprints[sprintIndex].name] || 0);
+                          }, 0);
+                          const sprintData = team.sprints.find(s => s.name === allSprints[sprintIndex].name);
+                          const capacity = sprintData ? sprintData.capacity : 0;
+                          const utilization = capacity > 0 ? Math.round((allocated / capacity) * 100) : 0;
+                          summary += `\n${teamName}: ${allocated}/${capacity} days (${utilization}%)`;
+                        });
+                        return summary;
                       }
                     }
                   }
                 },
                 scales: {
                   x: {
+                    stacked: false,
                     ticks: {
                       font: { size: 9 }
                     }
                   },
                   y: {
+                    stacked: true,
                     beginAtZero: true,
                     title: {
                       display: true,
@@ -478,7 +509,12 @@
                     }
                   }
                 },
-                animation: false
+                animation: false,
+                layout: {
+                  padding: {
+                    right: 20
+                  }
+                }
               }
             });
           };
@@ -831,45 +867,48 @@
               ),
 
               React.createElement('div', { className: 'mb-6' },
-                React.createElement('div', { className: 'flex justify-between items-center mb-2' },
-                  React.createElement('div', { className: 'flex justify-start gap-0', style: { marginLeft: '65px', width: 'calc(100% - 280px)' } },
-                    (() => {
-                      let currentMonth = '';
-                      const monthPositions = [];
-                      let startIdx = 0;
-                      
-                      team.sprints.forEach((sprint, idx) => {
-                        if (sprint.month !== currentMonth) {
-                          if (currentMonth) {
-                            monthPositions.push({ month: currentMonth, start: startIdx, end: idx - 1 });
+                React.createElement('div', { className: 'flex items-start gap-4' },
+                  React.createElement('div', { className: 'flex-1' },
+                    React.createElement('div', { className: 'flex justify-start gap-0 mb-2' },
+                      (() => {
+                        let currentMonth = '';
+                        const monthPositions = [];
+                        let startIdx = 0;
+                        
+                        team.sprints.forEach((sprint, idx) => {
+                          if (sprint.month !== currentMonth) {
+                            if (currentMonth) {
+                              monthPositions.push({ month: currentMonth, start: startIdx, end: idx - 1 });
+                            }
+                            currentMonth = sprint.month;
+                            startIdx = idx;
                           }
-                          currentMonth = sprint.month;
-                          startIdx = idx;
-                        }
-                        if (idx === team.sprints.length - 1) {
-                          monthPositions.push({ month: currentMonth, start: startIdx, end: idx });
-                        }
-                      });
-                      
-                      return monthPositions.map((pos, idx) => {
-                        const width = ((pos.end - pos.start + 1) / team.sprints.length) * 100;
-                        return React.createElement('div', { 
-                          key: idx, 
-                          style: { width: `${width}%` }, 
-                          className: 'text-center font-bold text-gray-700 text-sm' 
-                        }, pos.month);
-                      });
-                    })()
+                          if (idx === team.sprints.length - 1) {
+                            monthPositions.push({ month: currentMonth, start: startIdx, end: idx });
+                          }
+                        });
+                        
+                        return monthPositions.map((pos, idx) => {
+                          const width = ((pos.end - pos.start + 1) / team.sprints.length) * 100;
+                          return React.createElement('div', { 
+                            key: idx, 
+                            style: { width: `${width}%` }, 
+                            className: 'text-center font-bold text-gray-700 text-sm' 
+                          }, pos.month);
+                        });
+                      })()
+                    ),
+                    React.createElement('div', { style: { height: '400px', position: 'relative' }, key: activeTeam },
+                      React.createElement('canvas', { 
+                        id: 'single-team-chart',
+                        key: `chart-${activeTeam}`
+                      })
+                    )
                   ),
                   React.createElement('button', {
-                    onClick: () => renderTeamChart(team),
-                    className: 'px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600'
-                  }, 'Refresh Chart')
-                ),
-                React.createElement('div', { style: { height: '400px', position: 'relative' } },
-                  React.createElement('canvas', { 
-                    id: `chart-${team.name}`
-                  })
+                    onClick: () => renderTeamChart(activeTeam),
+                    className: 'px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 h-8'
+                  }, '↻')
                 )
               ),
 
@@ -1050,59 +1089,76 @@
               React.createElement('h2', { className: 'text-2xl font-bold mb-4 text-gray-800' }, 'All Teams - Capacity Utilization'),
               
               React.createElement('div', { className: 'mb-6' },
-                React.createElement('div', { className: 'flex justify-between items-center mb-2' },
-                  React.createElement('div', { className: 'flex justify-start gap-0', style: { marginLeft: '65px', width: 'calc(100% - 280px)' } },
-                    (() => {
-                      let currentMonth = '';
-                      const monthPositions = [];
-                      let startIdx = 0;
-                      
-                      allSprints.forEach((sprint, idx) => {
-                        if (sprint.month !== currentMonth) {
-                          if (currentMonth) {
-                            monthPositions.push({ month: currentMonth, start: startIdx, end: idx - 1 });
+                React.createElement('div', { className: 'flex items-start gap-4' },
+                  React.createElement('div', { className: 'flex-1' },
+                    React.createElement('div', { className: 'flex justify-start gap-0 mb-2' },
+                      (() => {
+                        let currentMonth = '';
+                        const monthPositions = [];
+                        let startIdx = 0;
+                        
+                        allSprints.forEach((sprint, idx) => {
+                          if (sprint.month !== currentMonth) {
+                            if (currentMonth) {
+                              monthPositions.push({ month: currentMonth, start: startIdx, end: idx - 1 });
+                            }
+                            currentMonth = sprint.month;
+                            startIdx = idx;
                           }
-                          currentMonth = sprint.month;
-                          startIdx = idx;
-                        }
-                        if (idx === allSprints.length - 1) {
-                          monthPositions.push({ month: currentMonth, start: startIdx, end: idx });
-                        }
-                      });
-                      
-                      return monthPositions.map((pos, idx) => {
-                        const width = ((pos.end - pos.start + 1) / allSprints.length) * 100;
-                        return React.createElement('div', { 
-                          key: idx, 
-                          style: { width: `${width}%` }, 
-                          className: 'text-center font-bold text-gray-700 text-sm' 
-                        }, pos.month);
-                      });
-                    })()
+                          if (idx === allSprints.length - 1) {
+                            monthPositions.push({ month: currentMonth, start: startIdx, end: idx });
+                          }
+                        });
+                        
+                        return monthPositions.map((pos, idx) => {
+                          const width = ((pos.end - pos.start + 1) / allSprints.length) * 100;
+                          return React.createElement('div', { 
+                            key: idx, 
+                            style: { width: `${width}%` }, 
+                            className: 'text-center font-bold text-gray-700 text-sm' 
+                          }, pos.month);
+                        });
+                      })()
+                    ),
+                    React.createElement('div', { style: { height: '500px', position: 'relative' } },
+                      React.createElement('canvas', { 
+                        id: 'chart-all-teams'
+                      })
+                    )
                   ),
                   React.createElement('button', {
                     onClick: () => renderAllTeamsChart(),
-                    className: 'px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600'
-                  }, 'Refresh Chart')
-                ),
-                React.createElement('div', { style: { height: '500px', position: 'relative' } },
-                  React.createElement('canvas', { 
-                    id: 'chart-all-teams'
-                  })
+                    className: 'px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 h-8'
+                  }, '↻')
                 )
               ),
 
               React.createElement('div', { className: 'mb-4 p-4 bg-gray-50 rounded' },
-                React.createElement('h3', { className: 'font-bold mb-2' }, 'Legend:'),
-                React.createElement('div', { className: 'grid grid-cols-2 gap-2 text-sm' },
+                React.createElement('h3', { className: 'font-bold mb-3 text-lg' }, 'Team Overview:'),
+                React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3' },
                   teamOrder.map(teamName => {
                     if (!teams[teamName]) return null;
-                    return React.createElement('div', { key: teamName, className: 'flex items-center gap-2' },
-                      React.createElement('div', { className: 'flex items-center gap-1' },
-                        React.createElement('div', { className: 'w-8 h-0.5', style: { backgroundColor: teams[teamName].color } }),
-                        React.createElement('span', { style: { color: teams[teamName].color }, className: 'font-medium' }, teamName)
+                    const team = teams[teamName];
+                    const totalAllocated = allSprints.reduce((total, sprint) => {
+                      return total + team.developmentItems.reduce((sum, item) => {
+                        return sum + (item.allocations[sprint.name] || 0);
+                      }, 0);
+                    }, 0);
+                    const totalCapacity = team.sprints.reduce((sum, s) => sum + s.capacity, 0);
+                    const avgUtilization = totalCapacity > 0 ? Math.round((totalAllocated / totalCapacity) * 100) : 0;
+                    
+                    return React.createElement('div', { 
+                      key: teamName, 
+                      className: 'p-3 bg-white rounded border-l-4',
+                      style: { borderLeftColor: team.color }
+                    },
+                      React.createElement('div', { className: 'font-bold mb-1', style: { color: team.color } }, teamName),
+                      React.createElement('div', { className: 'text-xs text-gray-600' }, 
+                        `${team.developmentItems.filter(i => i.name).length} Items`
                       ),
-                      React.createElement('span', { className: 'text-gray-500' }, '(Solid = Allocated, Dashed = Capacity)')
+                      React.createElement('div', { className: 'text-xs text-gray-600' }, 
+                        `Avg: ${avgUtilization}% utilized`
+                      )
                     );
                   })
                 )
@@ -1112,8 +1168,8 @@
                 React.createElement('table', { className: 'w-full border-collapse text-sm' },
                   React.createElement('thead', null,
                     React.createElement('tr', { className: 'bg-gray-200' },
-                      React.createElement('th', { className: 'border p-1 text-center sticky left-0 bg-gray-200 z-20 min-w-[150px]' }),
-                      React.createElement('th', { className: 'border p-1 text-left sticky left-[150px] bg-gray-200 z-20 min-w-[250px]' }),
+                      React.createElement('th', { className: 'border p-1 text-center sticky left-0 bg-gray-200 z-20 w-[120px]' }),
+                      React.createElement('th', { className: 'border p-1 text-left sticky left-[120px] bg-gray-200 z-20 w-[300px]' }),
                       (() => {
                         let currentMonth = '';
                         let monthSpan = 0;
@@ -1146,8 +1202,8 @@
                       React.createElement('th', { className: 'border p-1 text-center sticky right-0 bg-gray-200 z-20 w-[90px]' })
                     ),
                     React.createElement('tr', { className: 'bg-gray-100' },
-                      React.createElement('th', { className: 'border p-2 text-left sticky left-0 bg-gray-100 z-20 min-w-[150px]' }, 'Team'),
-                      React.createElement('th', { className: 'border p-2 text-left sticky left-[150px] bg-gray-100 z-20 min-w-[250px]' }, 'Development Item'),
+                      React.createElement('th', { className: 'border p-2 text-left sticky left-0 bg-gray-100 z-20 w-[120px]' }, 'Team'),
+                      React.createElement('th', { className: 'border p-2 text-left sticky left-[120px] bg-gray-100 z-20 w-[300px]' }, 'Development Item'),
                       allSprints.map(sprint =>
                         React.createElement('th', { 
                           key: sprint.name, 
@@ -1162,36 +1218,60 @@
                     teamOrder.map(teamName => {
                       if (!teams[teamName]) return null;
                       const t = teams[teamName];
-                      return t.developmentItems.filter(item => item.name).map((item, itemIdx) =>
-                        React.createElement('tr', { key: `${teamName}-${itemIdx}`, className: 'hover:bg-gray-50' },
+                      const items = t.developmentItems.filter(item => item.name);
+                      
+                      if (items.length === 0) return null;
+                      
+                      return [
+                        React.createElement('tr', { key: `${teamName}-header`, className: 'bg-gray-50' },
                           React.createElement('td', { 
-                            className: 'border p-2 font-medium sticky left-0 bg-white z-10',
-                            style: { color: t.color }
-                          }, teamName),
-                          React.createElement('td', { className: 'border p-2 sticky left-[150px] bg-white z-10' },
-                            React.createElement('div', { className: 'flex items-center gap-2' },
-                              React.createElement('div', { 
-                                className: 'w-4 h-4 rounded',
-                                style: { backgroundColor: item.color }
-                              }),
-                              item.name
+                            colSpan: allSprints.length + 3,
+                            className: 'border p-2 font-bold sticky left-0 z-10',
+                            style: { backgroundColor: t.color + '20', color: t.color }
+                          }, `${teamName} Team`)
+                        ),
+                        ...items.map((item, itemIdx) =>
+                          React.createElement('tr', { key: `${teamName}-${itemIdx}`, className: 'hover:bg-gray-50' },
+                            React.createElement('td', { 
+                              className: 'border p-2 text-center sticky left-0 bg-white z-10',
+                              style: { color: t.color }
+                            },
+                              React.createElement('div', { className: 'flex items-center justify-center gap-2' },
+                                React.createElement('div', { 
+                                  className: 'w-3 h-3 rounded-full',
+                                  style: { backgroundColor: t.color }
+                                }),
+                                React.createElement('span', { className: 'font-medium text-xs' }, teamName)
+                              )
+                            ),
+                            React.createElement('td', { className: 'border p-2 sticky left-[120px] bg-white z-10' },
+                              React.createElement('div', { className: 'flex items-center gap-2' },
+                                React.createElement('div', { 
+                                  className: 'w-4 h-4 rounded',
+                                  style: { backgroundColor: item.color }
+                                }),
+                                item.name
+                              )
+                            ),
+                            allSprints.map(sprint => {
+                              const value = item.allocations[sprint.name] || '';
+                              const hasValue = value > 0;
+                              return React.createElement('td', { 
+                                key: sprint.name, 
+                                className: `border p-2 text-center ${hasValue ? 'font-medium' : ''}`,
+                                style: { 
+                                  width: '70px',
+                                  backgroundColor: hasValue ? t.color + '15' : 'transparent'
+                                }
+                              }, value);
+                            }),
+                            React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-0 bg-white z-10' },
+                              Object.values(item.allocations).reduce((sum, val) => sum + val, 0)
                             )
-                          ),
-                          allSprints.map(sprint => {
-                            const value = item.allocations[sprint.name] || '';
-                            const hasValue = value > 0;
-                            return React.createElement('td', { 
-                              key: sprint.name, 
-                              className: `border p-2 text-center ${hasValue ? 'bg-blue-50 font-medium' : ''}`,
-                              style: { width: '70px' }
-                            }, value);
-                          }),
-                          React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-0 bg-white z-10' },
-                            Object.values(item.allocations).reduce((sum, val) => sum + val, 0)
                           )
                         )
-                      );
-                    })
+                      ];
+                    }).flat()
                   )
                 )
               )
