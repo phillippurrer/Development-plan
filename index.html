@@ -65,6 +65,66 @@
           React.createElement('circle', { cx: '15', cy: '19', r: '1' })
         );
 
+        // Custom Chart.js plugin: paints PI background bands and labels
+        const piBackgroundPlugin = {
+          id: 'piBackground',
+          beforeDatasetsDraw: (chart, args, options) => {
+            if (!options || !options.pis || options.pis.length === 0) return;
+            const { ctx, chartArea, scales } = chart;
+            const xScale = scales.x;
+            if (!xScale) return;
+
+            const labelCount = chart.data.labels ? chart.data.labels.length : 0;
+            if (labelCount === 0) return;
+
+            let halfBand = 20;
+            if (labelCount > 1) {
+              halfBand = (xScale.getPixelForValue(1) - xScale.getPixelForValue(0)) / 2;
+            } else {
+              halfBand = (chartArea.right - chartArea.left) / 2;
+            }
+
+            options.pis.forEach((pi, idx) => {
+              if (!pi.sprintIndices || pi.sprintIndices.length === 0) return;
+              const firstIdx = pi.sprintIndices[0];
+              const lastIdx = pi.sprintIndices[pi.sprintIndices.length - 1];
+              const firstPx = xScale.getPixelForValue(firstIdx);
+              const lastPx = xScale.getPixelForValue(lastIdx);
+              const left = Math.max(chartArea.left, firstPx - halfBand);
+              const right = Math.min(chartArea.right, lastPx + halfBand);
+              const width = right - left;
+              if (width <= 0) return;
+
+              const isSelected = options.selectedPI === pi.name;
+
+              ctx.save();
+              if (isSelected) {
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.18)';
+              } else {
+                ctx.fillStyle = idx % 2 === 0 ? 'rgba(148, 163, 184, 0.10)' : 'rgba(148, 163, 184, 0.03)';
+              }
+              ctx.fillRect(left, chartArea.top, width, chartArea.bottom - chartArea.top);
+
+              // Border between PIs
+              ctx.strokeStyle = isSelected ? '#2563eb' : 'rgba(148, 163, 184, 0.45)';
+              ctx.lineWidth = isSelected ? 2 : 1;
+              ctx.strokeRect(left + 0.5, chartArea.top + 0.5, width - 1, chartArea.bottom - chartArea.top - 1);
+
+              // PI label at the very top of the band
+              ctx.fillStyle = isSelected ? '#1e3a8a' : '#475569';
+              ctx.font = isSelected ? 'bold 11px sans-serif' : '600 10px sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'top';
+              ctx.fillText(pi.name, left + width / 2, chartArea.top + 2);
+
+              ctx.restore();
+            });
+          }
+        };
+        if (typeof Chart !== 'undefined') {
+          Chart.register(piBackgroundPlugin);
+        }
+
         const ResourcePlanning = () => {
           const [loading, setLoading] = useState(true);
           const [lastSaved, setLastSaved] = useState(null);
@@ -72,6 +132,7 @@
           const [activeTeam, setActiveTeam] = useState('Backend');
           const [showTeamSettings, setShowTeamSettings] = useState(false);
           const [draggedItem, setDraggedItem] = useState(null);
+          const [selectedPI, setSelectedPI] = useState(null);
           const saveTimeoutRef = React.useRef(null);
           const chartInstancesRef = React.useRef({});
           
@@ -114,6 +175,29 @@
               month: sprint.month,
               period: `${sprint.start} - ${sprint.end}`
             }));
+          };
+
+          // Group sprints into Program Increments (PIs) of 4 sprints (8 weeks) each.
+          // PI name follows the convention "PI<endSprintName>" e.g. PI26.08, PI26.16, ...
+          const generatePIs = (sprints) => {
+            const pis = [];
+            for (let i = 0; i < sprints.length; i += 4) {
+              const chunk = sprints.slice(i, i + 4);
+              if (chunk.length === 0) continue;
+              const lastSprint = chunk[chunk.length - 1];
+              pis.push({
+                name: `PI${lastSprint.name}`,
+                sprintNames: chunk.map(s => s.name),
+                sprintIndices: chunk.map((_, idx) => i + idx),
+                startDate: chunk[0].startDate,
+                endDate: lastSprint.endDate
+              });
+            }
+            return pis;
+          };
+
+          const findPIForSprint = (pis, sprintName) => {
+            return pis.find(pi => pi.sprintNames.includes(sprintName));
           };
 
           const sampleBackendData = [
@@ -284,11 +368,11 @@
                 renderTeamChart(activeTeam);
               }
             }, 150);
-            
+
             return () => {
               clearTimeout(timer);
             };
-          }, [activeTeam]);
+          }, [activeTeam, selectedPI]);
 
           // Initial chart render after loading
           useEffect(() => {
@@ -308,7 +392,7 @@
           const renderTeamChart = (teamName) => {
             const team = teams[teamName];
             if (!team) return;
-            
+
             const canvas = document.getElementById('single-team-chart');
             if (!canvas) return;
 
@@ -319,7 +403,8 @@
             }
 
             const ctx = canvas.getContext('2d');
-            
+            const pis = generatePIs(team.sprints);
+
             const datasets = team.developmentItems
               .filter(item => item.name)
               .map(item => ({
@@ -367,6 +452,12 @@
                   },
                   tooltip: {
                     callbacks: {
+                      title: (tooltipItems) => {
+                        const sprintIndex = tooltipItems[0].dataIndex;
+                        const sprint = team.sprints[sprintIndex];
+                        const pi = findPIForSprint(pis, sprint.name);
+                        return `${sprint.name}${pi ? ' — ' + pi.name : ''}`;
+                      },
                       footer: (tooltipItems) => {
                         const sprintIndex = tooltipItems[0].dataIndex;
                         const allocated = datasets
@@ -377,6 +468,10 @@
                         return `\nTotal Allocated: ${allocated}\nCapacity: ${capacity}\nRemaining: ${remaining}`;
                       }
                     }
+                  },
+                  piBackground: {
+                    pis: pis,
+                    selectedPI: selectedPI
                   }
                 },
                 scales: {
@@ -398,7 +493,8 @@
                 animation: false,
                 layout: {
                   padding: {
-                    right: 20
+                    right: 20,
+                    top: 18
                   }
                 }
               }
@@ -417,6 +513,7 @@
 
             const ctx = canvas.getContext('2d');
             const allSprints = generateSprints();
+            const pis = generatePIs(allSprints);
             const datasets = [];
 
             // Für jedes Team: prozentuale Auslastung als Linie
@@ -517,6 +614,10 @@
                         borderDash: [10, 5]
                       }
                     }
+                  },
+                  piBackground: {
+                    pis: pis,
+                    selectedPI: selectedPI
                   }
                 },
                 scales: {
@@ -554,7 +655,8 @@
                 animation: false,
                 layout: {
                   padding: {
-                    right: 20
+                    right: 20,
+                    top: 18
                   }
                 }
               }
@@ -781,6 +883,14 @@
 
           const team = activeTeam !== 'All Teams' ? teams[activeTeam] : null;
           const allSprints = generateSprints();
+          const allPIs = generatePIs(allSprints);
+          const selectedPISprintNames = selectedPI
+            ? (allPIs.find(p => p.name === selectedPI)?.sprintNames || [])
+            : [];
+          const isItemInSelectedPI = (item) => {
+            if (!selectedPI) return true;
+            return selectedPISprintNames.some(sn => (item.allocations[sn] || 0) > 0);
+          };
 
           return React.createElement('div', { className: 'p-6 max-w-full mx-auto bg-gray-50 min-h-screen' },
             React.createElement('div', { className: 'mb-6 flex items-center justify-between' },
@@ -901,6 +1011,23 @@
               }, 'All Teams')
             ),
 
+            React.createElement('div', { className: 'mb-6 flex gap-2 flex-wrap items-center' },
+              React.createElement('span', { className: 'text-sm font-semibold text-gray-600 mr-1' }, 'Program Increment:'),
+              React.createElement('button', {
+                key: 'all-pis',
+                onClick: () => setSelectedPI(null),
+                className: `px-3 py-1.5 rounded text-sm font-medium border ${selectedPI === null ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`
+              }, 'All PIs'),
+              allPIs.map(pi =>
+                React.createElement('button', {
+                  key: pi.name,
+                  onClick: () => setSelectedPI(pi.name),
+                  title: `${pi.sprintNames[0]} – ${pi.sprintNames[pi.sprintNames.length - 1]}  (${pi.startDate} – ${pi.endDate})`,
+                  className: `px-3 py-1.5 rounded text-sm font-medium border ${selectedPI === pi.name ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`
+                }, pi.name)
+              )
+            ),
+
             activeTeam !== 'All Teams' ? React.createElement('div', { className: 'bg-white rounded-lg shadow-md p-6 mb-6' },
               React.createElement('div', { className: 'mb-6 flex items-center justify-between' },
                 React.createElement('h2', { className: 'text-2xl font-bold', style: { color: team.color } }, 
@@ -1000,20 +1127,24 @@
                       React.createElement('th', { className: 'border p-2 text-center sticky left-0 bg-gray-100 z-20 w-[40px]' }),
                       React.createElement('th', { className: 'border p-2 text-left sticky left-[40px] bg-gray-100 z-20', style: {minWidth: '245px'} }, 'Development Item'),
                       React.createElement('th', { className: 'border p-2 text-center sticky left-[285px] bg-gray-100 z-20 w-[80px]' }, 'Color'),
-                      team.sprints.map(sprint =>
-                        React.createElement('th', { 
-                          key: sprint.name, 
-                          className: 'border p-2 text-center w-[70px]',
+                      team.sprints.map(sprint => {
+                        const inSelectedPI = selectedPI && selectedPISprintNames.includes(sprint.name);
+                        return React.createElement('th', {
+                          key: sprint.name,
+                          className: `border p-2 text-center w-[70px] ${inSelectedPI ? 'bg-blue-200 text-blue-900' : ''}`,
                           title: sprint.period
-                        }, sprint.name)
-                      ),
+                        }, sprint.name);
+                      }),
                       React.createElement('th', { className: 'border p-2 text-center sticky right-[40px] bg-gray-100 z-20 w-[100px]' }, 'Total Days'),
                       React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 z-20 w-[40px]' }, 'Actions')
                     )
                   ),
                   React.createElement('tbody', null,
-                    team.developmentItems.map((item, itemIdx) =>
-                      React.createElement('tr', { 
+                    team.developmentItems
+                      .map((item, itemIdx) => ({ item, itemIdx }))
+                      .filter(({ item }) => isItemInSelectedPI(item))
+                      .map(({ item, itemIdx }) =>
+                      React.createElement('tr', {
                         key: itemIdx,
                         className: 'hover:bg-gray-50',
                         draggable: true,
@@ -1044,9 +1175,10 @@
                         team.sprints.map(sprint => {
                           const value = item.allocations[sprint.name] || '';
                           const hasValue = value > 0;
-                          return React.createElement('td', { 
-                            key: sprint.name, 
-                            className: `border p-1 ${hasValue ? 'bg-blue-50' : ''}` 
+                          const inSelectedPI = selectedPI && selectedPISprintNames.includes(sprint.name);
+                          return React.createElement('td', {
+                            key: sprint.name,
+                            className: `border p-1 ${hasValue ? 'bg-blue-50' : ''} ${inSelectedPI ? 'ring-1 ring-blue-300' : ''}`
                           },
                             React.createElement('input', {
                               type: 'number',
@@ -1268,13 +1400,14 @@
                     React.createElement('tr', { className: 'bg-gray-100' },
                       React.createElement('th', { className: 'border p-2 text-left sticky left-0 bg-gray-100 z-20 w-[120px]' }, 'Team'),
                       React.createElement('th', { className: 'border p-2 text-left sticky left-[120px] bg-gray-100 z-20 w-[300px]' }, 'Development Item'),
-                      allSprints.map(sprint =>
-                        React.createElement('th', { 
-                          key: sprint.name, 
-                          className: 'border p-2 text-center w-[70px]',
+                      allSprints.map(sprint => {
+                        const inSelectedPI = selectedPI && selectedPISprintNames.includes(sprint.name);
+                        return React.createElement('th', {
+                          key: sprint.name,
+                          className: `border p-2 text-center w-[70px] ${inSelectedPI ? 'bg-blue-200 text-blue-900' : ''}`,
                           title: sprint.period
-                        }, sprint.name)
-                      ),
+                        }, sprint.name);
+                      }),
                       React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 z-20 w-[90px]' }, 'Total Days')
                     )
                   ),
@@ -1282,8 +1415,8 @@
                     teamOrder.map(teamName => {
                       if (!teams[teamName]) return null;
                       const t = teams[teamName];
-                      const items = t.developmentItems.filter(item => item.name);
-                      
+                      const items = t.developmentItems.filter(item => item.name && isItemInSelectedPI(item));
+
                       if (items.length === 0) return null;
                       
                       return [
@@ -1320,10 +1453,11 @@
                             allSprints.map(sprint => {
                               const value = item.allocations[sprint.name] || '';
                               const hasValue = value > 0;
-                              return React.createElement('td', { 
-                                key: sprint.name, 
-                                className: `border p-2 text-center ${hasValue ? 'font-medium' : ''}`,
-                                style: { 
+                              const inSelectedPI = selectedPI && selectedPISprintNames.includes(sprint.name);
+                              return React.createElement('td', {
+                                key: sprint.name,
+                                className: `border p-2 text-center ${hasValue ? 'font-medium' : ''} ${inSelectedPI ? 'ring-1 ring-blue-300' : ''}`,
+                                style: {
                                   width: '70px',
                                   backgroundColor: hasValue ? t.color + '15' : 'transparent'
                                 }
