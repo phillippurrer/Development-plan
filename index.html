@@ -17,7 +17,7 @@
       input[type="color"] { -webkit-appearance: none; border: none; padding: 0; }
       input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
       input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
-      .dark table td, .dark table th { border-color: #374151; }
+      .dark table td, .dark table th { border-color: #4b5563; }
       .dark ::-webkit-scrollbar { width: 8px; height: 8px; }
       .dark ::-webkit-scrollbar-track { background: #1f2937; }
       .dark ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
@@ -1352,12 +1352,13 @@
                         React.createElement('td', { className: 'border p-2 text-center sticky left-0 bg-white dark:bg-gray-800 z-10 cursor-move' },
                           React.createElement(GripVertical, { size: 18 })
                         ),
-                        React.createElement('td', { className: 'border p-1 text-center sticky left-[40px] bg-white dark:bg-gray-800 z-10' },
+                        React.createElement('td', { className: 'border p-2 text-center sticky left-[40px] bg-white dark:bg-gray-800 z-10' },
                           React.createElement('input', {
                             type: 'color',
                             value: item.color || '#3b82f6',
                             onChange: (e) => updateItemColor(activeTeam, itemIdx, e.target.value),
-                            className: 'w-7 h-7 cursor-pointer border-0 p-0 rounded'
+                            className: 'w-7 h-7 cursor-pointer border-0 p-0 rounded',
+                            style: { verticalAlign: 'middle' }
                           })
                         ),
                         React.createElement('td', { className: 'border p-2 sticky left-[80px] bg-white dark:bg-gray-800 z-10' },
