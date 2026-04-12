@@ -8,7 +8,7 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' }</script>
-    <script>if(localStorage.getItem('darkMode')==='true')document.documentElement.classList.add('dark')</script>
+    <script>if(localStorage.getItem('darkMode')!=='false')document.documentElement.classList.add('dark')</script>
     <style>
       .dark input[type="number"], .dark input[type="text"] { color-scheme: dark; }
       input[type="number"]::-webkit-inner-spin-button,
@@ -294,7 +294,7 @@
           const [activeTeam, setActiveTeam] = useState('Backend');
           const [showTeamSettings, setShowTeamSettings] = useState(false);
           const [draggedItem, setDraggedItem] = useState(null);
-          const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+          const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') !== 'false');
 
           const toggleDarkMode = () => {
             setDarkMode(prev => {
