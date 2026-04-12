@@ -7,6 +7,14 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: 'class' }</script>
+    <script>if(localStorage.getItem('darkMode')==='true')document.documentElement.classList.add('dark')</script>
+    <style>
+      .dark input[type="number"], .dark input[type="text"] { color-scheme: dark; }
+      .dark ::-webkit-scrollbar { width: 8px; height: 8px; }
+      .dark ::-webkit-scrollbar-track { background: #1f2937; }
+      .dark ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -63,6 +71,22 @@
           React.createElement('circle', { cx: '15', cy: '12', r: '1' }),
           React.createElement('circle', { cx: '15', cy: '5', r: '1' }),
           React.createElement('circle', { cx: '15', cy: '19', r: '1' })
+        );
+
+        const Sun = ({ size = 24 }) => React.createElement('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '2' },
+          React.createElement('circle', { cx: '12', cy: '12', r: '5' }),
+          React.createElement('line', { x1: '12', y1: '1', x2: '12', y2: '3' }),
+          React.createElement('line', { x1: '12', y1: '21', x2: '12', y2: '23' }),
+          React.createElement('line', { x1: '4.22', y1: '4.22', x2: '5.64', y2: '5.64' }),
+          React.createElement('line', { x1: '18.36', y1: '18.36', x2: '19.78', y2: '19.78' }),
+          React.createElement('line', { x1: '1', y1: '12', x2: '3', y2: '12' }),
+          React.createElement('line', { x1: '21', y1: '12', x2: '23', y2: '12' }),
+          React.createElement('line', { x1: '4.22', y1: '19.78', x2: '5.64', y2: '18.36' }),
+          React.createElement('line', { x1: '18.36', y1: '5.64', x2: '19.78', y2: '4.22' })
+        );
+
+        const Moon = ({ size = 24 }) => React.createElement('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '2' },
+          React.createElement('path', { d: 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z' })
         );
 
         // Custom Chart.js plugin: paints PI background bands and labels
@@ -132,39 +156,42 @@
 
               const isSelected = options.selectedPI === pi.name;
               const isHovered = hoveredPI === pi.name && !isSelected;
+              const isDark = options.darkMode;
 
               ctx.save();
               if (isSelected) {
-                ctx.fillStyle = 'rgba(59, 130, 246, 0.18)';
+                ctx.fillStyle = isDark ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.18)';
               } else if (isHovered) {
-                ctx.fillStyle = 'rgba(59, 130, 246, 0.10)';
+                ctx.fillStyle = isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.10)';
               } else {
-                ctx.fillStyle = idx % 2 === 0 ? 'rgba(148, 163, 184, 0.10)' : 'rgba(148, 163, 184, 0.03)';
+                ctx.fillStyle = idx % 2 === 0
+                  ? (isDark ? 'rgba(148, 163, 184, 0.08)' : 'rgba(148, 163, 184, 0.10)')
+                  : (isDark ? 'rgba(148, 163, 184, 0.03)' : 'rgba(148, 163, 184, 0.03)');
               }
               ctx.fillRect(left, chartArea.top, width, chartArea.bottom - chartArea.top);
 
               // Border between PIs
               if (isSelected) {
-                ctx.strokeStyle = '#2563eb';
+                ctx.strokeStyle = '#3b82f6';
                 ctx.lineWidth = 2;
               } else if (isHovered) {
                 ctx.strokeStyle = '#60a5fa';
                 ctx.lineWidth = 2;
               } else {
-                ctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
+                ctx.strokeStyle = isDark ? 'rgba(148, 163, 184, 0.25)' : 'rgba(148, 163, 184, 0.45)';
                 ctx.lineWidth = 1;
               }
               ctx.strokeRect(left + 0.5, chartArea.top + 0.5, width - 1, chartArea.bottom - chartArea.top - 1);
 
               // PI label at the very top of the band
               if (isSelected) {
-                ctx.fillStyle = '#1e3a8a';
+                ctx.fillStyle = isDark ? '#93c5fd' : '#1e3a8a';
                 ctx.font = 'bold 11px sans-serif';
               } else if (isHovered) {
-                ctx.fillStyle = '#2563eb';
+                ctx.fillStyle = isDark ? '#60a5fa' : '#2563eb';
                 ctx.font = 'bold 11px sans-serif';
               } else {
-                ctx.fillStyle = '#475569';
+                ctx.fillStyle = isDark ? '#9ca3af' : '#475569';
                 ctx.font = '600 10px sans-serif';
               }
               ctx.textAlign = 'center';
@@ -260,6 +287,20 @@
           const [activeTeam, setActiveTeam] = useState('Backend');
           const [showTeamSettings, setShowTeamSettings] = useState(false);
           const [draggedItem, setDraggedItem] = useState(null);
+          const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+
+          const toggleDarkMode = () => {
+            setDarkMode(prev => {
+              const next = !prev;
+              localStorage.setItem('darkMode', next);
+              if (next) {
+                document.documentElement.classList.add('dark');
+              } else {
+                document.documentElement.classList.remove('dark');
+              }
+              return next;
+            });
+          };
           const [selectedPI, setSelectedPI] = useState(null);
           const saveTimeoutRef = React.useRef(null);
           const chartInstancesRef = React.useRef({});
@@ -500,7 +541,7 @@
             return () => {
               clearTimeout(timer);
             };
-          }, [activeTeam, selectedPI]);
+          }, [activeTeam, selectedPI, darkMode]);
 
           // Initial chart render after loading
           useEffect(() => {
@@ -548,7 +589,7 @@
               label: 'Capacity',
               data: team.sprints.map(sprint => sprint.capacity),
               type: 'line',
-              borderColor: '#94a3b8',
+              borderColor: darkMode ? '#cbd5e1' : '#94a3b8',
               backgroundColor: 'transparent',
               borderWidth: 2,
               borderDash: [5, 5],
@@ -588,6 +629,7 @@
                   piBackground: {
                     pis: pis,
                     selectedPI: selectedPI,
+                    darkMode: darkMode,
                     onPIClick: (piName) => {
                       setSelectedPI(prev => prev === piName ? null : piName);
                     }
@@ -598,16 +640,21 @@
                   x: {
                     stacked: true,
                     ticks: {
-                      font: { size: 9 }
-                    }
+                      font: { size: 9 },
+                      color: darkMode ? '#9ca3af' : '#374151'
+                    },
+                    grid: { color: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)' }
                   },
                   y: {
                     stacked: true,
                     beginAtZero: true,
                     title: {
                       display: true,
-                      text: 'Days'
-                    }
+                      text: 'Days',
+                      color: darkMode ? '#9ca3af' : '#374151'
+                    },
+                    ticks: { color: darkMode ? '#9ca3af' : '#374151' },
+                    grid: { color: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)' }
                   }
                 },
                 animation: false,
@@ -738,6 +785,7 @@
                   piBackground: {
                     pis: pis,
                     selectedPI: selectedPI,
+                    darkMode: darkMode,
                     onPIClick: (piName) => {
                       setSelectedPI(prev => prev === piName ? null : piName);
                     }
@@ -747,30 +795,30 @@
                 scales: {
                   x: {
                     ticks: {
-                      font: { size: 9 }
-                    }
+                      font: { size: 9 },
+                      color: darkMode ? '#9ca3af' : '#374151'
+                    },
+                    grid: { color: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)' }
                   },
                   y: {
                     beginAtZero: true,
                     max: 120,
                     title: {
                       display: true,
-                      text: 'Utilization (%)'
+                      text: 'Utilization (%)',
+                      color: darkMode ? '#9ca3af' : '#374151'
                     },
                     ticks: {
-                      callback: (value) => value + '%'
+                      callback: (value) => value + '%',
+                      color: darkMode ? '#9ca3af' : '#374151'
                     },
                     grid: {
                       color: (context) => {
-                        if (context.tick.value === 100) {
-                          return '#dc2626';
-                        }
-                        return 'rgba(0, 0, 0, 0.1)';
+                        if (context.tick.value === 100) return '#dc2626';
+                        return darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)';
                       },
                       lineWidth: (context) => {
-                        if (context.tick.value === 100) {
-                          return 2;
-                        }
+                        if (context.tick.value === 100) return 2;
                         return 1;
                       }
                     }
@@ -997,10 +1045,10 @@
           };
 
           if (loading) {
-            return React.createElement('div', { className: 'flex items-center justify-center min-h-screen bg-gray-50' },
+            return React.createElement('div', { className: 'flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900' },
               React.createElement('div', { className: 'text-center' },
-                React.createElement('div', { className: 'text-xl text-gray-600 mb-2' }, 'Loading from Firebase...'),
-                React.createElement('div', { className: 'text-sm text-gray-500' }, 'Syncing multi-team data')
+                React.createElement('div', { className: 'text-xl text-gray-600 dark:text-gray-300 mb-2' }, 'Loading from Firebase...'),
+                React.createElement('div', { className: 'text-sm text-gray-500 dark:text-gray-400' }, 'Syncing multi-team data')
               )
             );
           }
@@ -1029,10 +1077,10 @@
             return style;
           };
 
-          return React.createElement('div', { className: 'p-6 max-w-full mx-auto bg-gray-50 min-h-screen' },
+          return React.createElement('div', { className: 'p-6 max-w-full mx-auto bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors' },
             React.createElement('div', { className: 'mb-6 flex items-center justify-between' },
               React.createElement('div', null,
-                React.createElement('h1', { className: 'text-3xl font-bold text-gray-800 mb-2' }, 'Sprint Resource Planning 2026'),
+                React.createElement('h1', { className: 'text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2' }, 'Sprint Resource Planning 2026'),
                 React.createElement('div', { className: 'flex items-center gap-4 text-sm' },
                   React.createElement('div', { className: 'flex items-center gap-2' },
                     React.createElement(Cloud, { size: 16 }),
@@ -1050,12 +1098,17 @@
                       'Error'
                     )
                   ),
-                  lastSaved && React.createElement('span', { className: 'text-gray-500' },
+                  lastSaved && React.createElement('span', { className: 'text-gray-500 dark:text-gray-400' },
                     'Last saved: ' + lastSaved.toLocaleTimeString()
                   )
                 )
               ),
               React.createElement('div', { className: 'flex gap-2' },
+                React.createElement('button', {
+                  onClick: toggleDarkMode,
+                  className: 'px-3 py-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors',
+                  title: darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'
+                }, React.createElement(darkMode ? Sun : Moon, { size: 20 })),
                 React.createElement('button', {
                   onClick: () => setShowTeamSettings(!showTeamSettings),
                   className: 'px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center gap-2'
@@ -1081,18 +1134,18 @@
               )
             ),
 
-            showTeamSettings && React.createElement('div', { className: 'bg-white rounded-lg shadow-md p-6 mb-6' },
-              React.createElement('h2', { className: 'text-xl font-bold mb-4' }, 'Team Capacity Settings'),
+            showTeamSettings && React.createElement('div', { className: 'bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6' },
+              React.createElement('h2', { className: 'text-xl font-bold mb-4 dark:text-gray-100' }, 'Team Capacity Settings'),
               React.createElement('div', { className: 'space-y-6' },
                 teamOrder.map(teamName => {
                   if (!teams[teamName]) return null;
                   const t = teams[teamName];
                   const totalCapacity = t.employees.reduce((sum, emp) => sum + (emp.daysPerWeek || 0), 0);
                   
-                  return React.createElement('div', { key: teamName, className: 'border-b pb-4' },
+                  return React.createElement('div', { key: teamName, className: 'border-b dark:border-gray-600 pb-4' },
                     React.createElement('div', { className: 'flex items-center justify-between mb-3' },
                       React.createElement('h3', { className: 'font-bold text-lg', style: { color: t.color } }, teamName),
-                      React.createElement('div', { className: 'text-sm text-gray-600' },
+                      React.createElement('div', { className: 'text-sm text-gray-600 dark:text-gray-400' },
                         `Default Sprint Capacity: ${totalCapacity} days`
                       )
                     ),
@@ -1104,14 +1157,14 @@
                             value: emp.name,
                             onChange: (e) => updateEmployee(teamName, empIdx, 'name', e.target.value),
                             placeholder: 'Employee/Group name',
-                            className: 'border px-2 py-1 rounded flex-1'
+                            className: 'border dark:border-gray-600 px-2 py-1 rounded flex-1 dark:bg-gray-700 dark:text-white'
                           }),
                           React.createElement('input', {
                             type: 'number',
                             value: emp.daysPerWeek || '',
                             onChange: (e) => updateEmployee(teamName, empIdx, 'daysPerWeek', e.target.value),
                             placeholder: 'Days/sprint',
-                            className: 'border px-2 py-1 rounded w-32'
+                            className: 'border dark:border-gray-600 px-2 py-1 rounded w-32 dark:bg-gray-700 dark:text-white'
                           }),
                           React.createElement('button', {
                             onClick: () => removeEmployee(teamName, empIdx),
@@ -1138,34 +1191,34 @@
                 return React.createElement('button', {
                   key: teamName,
                   onClick: () => setActiveTeam(teamName),
-                  className: `px-4 py-2 rounded font-medium ${activeTeam === teamName ? 'text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`,
+                  className: `px-4 py-2 rounded font-medium ${activeTeam === teamName ? 'text-white' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600'}`,
                   style: activeTeam === teamName ? { backgroundColor: teams[teamName].color } : {}
                 }, teamName);
               }),
               React.createElement('button', {
                 onClick: () => setActiveTeam('All Teams'),
-                className: `px-4 py-2 rounded font-medium ${activeTeam === 'All Teams' ? 'bg-gray-800 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`
+                className: `px-4 py-2 rounded font-medium ${activeTeam === 'All Teams' ? 'bg-gray-800 text-white' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600'}`
               }, 'All Teams')
             ),
 
             React.createElement('div', { className: 'mb-6 flex gap-2 flex-wrap items-center' },
-              React.createElement('span', { className: 'text-sm font-semibold text-gray-600 mr-1' }, 'Program Increment:'),
+              React.createElement('span', { className: 'text-sm font-semibold text-gray-600 dark:text-gray-400 mr-1' }, 'Program Increment:'),
               React.createElement('button', {
                 key: 'all-pis',
                 onClick: () => setSelectedPI(null),
-                className: `px-3 py-1.5 rounded text-sm font-medium border ${selectedPI === null ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`
+                className: `px-3 py-1.5 rounded text-sm font-medium border ${selectedPI === null ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600'}`
               }, 'All PIs'),
               allPIs.map(pi =>
                 React.createElement('button', {
                   key: pi.name,
                   onClick: () => setSelectedPI(pi.name),
                   title: `${pi.sprintNames[0]} – ${pi.sprintNames[pi.sprintNames.length - 1]}  (${pi.startDate} – ${pi.endDate})`,
-                  className: `px-3 py-1.5 rounded text-sm font-medium border ${selectedPI === pi.name ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`
+                  className: `px-3 py-1.5 rounded text-sm font-medium border ${selectedPI === pi.name ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600'}`
                 }, pi.name)
               )
             ),
 
-            activeTeam !== 'All Teams' ? React.createElement('div', { className: 'bg-white rounded-lg shadow-md p-6 mb-6' },
+            activeTeam !== 'All Teams' ? React.createElement('div', { className: 'bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6' },
               React.createElement('div', { className: 'mb-6 flex items-center justify-between' },
                 React.createElement('h2', { className: 'text-2xl font-bold', style: { color: team.color } }, 
                   `${team.name} Team - Resource Planning`
@@ -1200,7 +1253,7 @@
                             return React.createElement('div', {
                               key: idx,
                               style: { width: `${width}%` },
-                              className: 'text-center font-bold text-gray-700 text-sm'
+                              className: 'text-center font-bold text-gray-700 dark:text-gray-300 text-sm'
                             }, pos.month);
                           });
                         })()
@@ -1224,9 +1277,9 @@
                 React.createElement('table', { className: 'w-full border-collapse text-sm' },
                   React.createElement('thead', null,
                     React.createElement('tr', { className: 'bg-gray-200' },
-                      React.createElement('th', { className: 'border p-1 text-center sticky left-0 bg-gray-200 z-20 w-[40px]' }),
-                      React.createElement('th', { className: 'border p-1 text-left sticky left-[40px] bg-gray-200 z-20', style: {minWidth: '245px'} }),
-                      React.createElement('th', { className: 'border p-1 text-center sticky left-[285px] bg-gray-200 z-20 w-[80px]' }),
+                      React.createElement('th', { className: 'border p-1 text-center sticky left-0 bg-gray-200 dark:bg-gray-700 z-20 w-[40px]' }),
+                      React.createElement('th', { className: 'border p-1 text-left sticky left-[40px] bg-gray-200 dark:bg-gray-700 z-20', style: {minWidth: '245px'} }),
+                      React.createElement('th', { className: 'border p-1 text-center sticky left-[285px] bg-gray-200 dark:bg-gray-700 z-20 w-[80px]' }),
                       (() => {
                         let currentMonth = '';
                         let monthSpan = 0;
@@ -1252,17 +1305,17 @@
                           React.createElement('th', { 
                             key: idx, 
                             colSpan: header.span, 
-                            className: 'border p-1 text-center font-bold text-gray-700' 
+                            className: 'border dark:border-gray-600 p-1 text-center font-bold text-gray-700 dark:text-gray-300' 
                           }, header.month)
                         );
                       })(),
-                      React.createElement('th', { className: 'border p-1 text-center sticky right-[40px] bg-gray-200 z-20', style: { minWidth: '80px' } }),
-                      React.createElement('th', { className: 'border p-1 text-center sticky right-0 bg-gray-200 z-20', style: { minWidth: '40px' } })
+                      React.createElement('th', { className: 'border p-1 text-center sticky right-[40px] bg-gray-200 dark:bg-gray-700 z-20', style: { minWidth: '80px' } }),
+                      React.createElement('th', { className: 'border p-1 text-center sticky right-0 bg-gray-200 dark:bg-gray-700 z-20', style: { minWidth: '40px' } })
                     ),
                     React.createElement('tr', { className: 'bg-gray-100' },
-                      React.createElement('th', { className: 'border p-2 text-center sticky left-0 bg-gray-100 z-20 w-[40px]' }),
-                      React.createElement('th', { className: 'border p-2 text-left sticky left-[40px] bg-gray-100 z-20', style: {minWidth: '245px'} }, 'Development Item'),
-                      React.createElement('th', { className: 'border p-2 text-center sticky left-[285px] bg-gray-100 z-20 w-[80px]' }, 'Color'),
+                      React.createElement('th', { className: 'border p-2 text-center sticky left-0 bg-gray-100 dark:bg-gray-700 z-20 w-[40px]' }),
+                      React.createElement('th', { className: 'border p-2 text-left sticky left-[40px] bg-gray-100 dark:bg-gray-700 z-20', style: {minWidth: '245px'} }, 'Development Item'),
+                      React.createElement('th', { className: 'border p-2 text-center sticky left-[285px] bg-gray-100 dark:bg-gray-700 z-20 w-[80px]' }, 'Color'),
                       team.sprints.map(sprint => {
                         const inSelectedPI = selectedPI && selectedPISprintNames.includes(sprint.name);
                         return React.createElement('th', {
@@ -1272,8 +1325,8 @@
                           title: sprint.period
                         }, sprint.name);
                       }),
-                      React.createElement('th', { className: 'border p-2 text-center sticky right-[40px] bg-gray-100 z-20', style: { minWidth: '80px' } }, 'Total Days'),
-                      React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 z-20', style: { minWidth: '40px' } }, 'Actions')
+                      React.createElement('th', { className: 'border p-2 text-center sticky right-[40px] bg-gray-100 dark:bg-gray-700 z-20', style: { minWidth: '80px' } }, 'Total Days'),
+                      React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 dark:bg-gray-700 z-20', style: { minWidth: '40px' } }, 'Actions')
                     )
                   ),
                   React.createElement('tbody', null,
@@ -1283,25 +1336,25 @@
                       .map(({ item, itemIdx }) =>
                       React.createElement('tr', {
                         key: itemIdx,
-                        className: 'hover:bg-gray-50',
+                        className: 'hover:bg-gray-50 dark:hover:bg-gray-700/50 dark:text-gray-200',
                         draggable: true,
                         onDragStart: (e) => handleDragStart(e, activeTeam, itemIdx),
                         onDragOver: handleDragOver,
                         onDrop: (e) => handleDrop(e, activeTeam, itemIdx)
                       },
-                        React.createElement('td', { className: 'border p-2 text-center sticky left-0 bg-white z-10 cursor-move' },
+                        React.createElement('td', { className: 'border p-2 text-center sticky left-0 bg-white dark:bg-gray-800 z-10 cursor-move' },
                           React.createElement(GripVertical, { size: 18 })
                         ),
-                        React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-white z-10' },
+                        React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-white dark:bg-gray-800 z-10' },
                           React.createElement('input', {
                             type: 'text',
                             value: item.name,
                             onChange: (e) => updateItemName(activeTeam, itemIdx, e.target.value),
                             placeholder: 'Enter development item name',
-                            className: 'w-full px-2 py-1 border rounded'
+                            className: 'w-full px-2 py-1 border dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white'
                           })
                         ),
-                        React.createElement('td', { className: 'border p-2 text-center sticky left-[285px] bg-white z-10' },
+                        React.createElement('td', { className: 'border p-2 text-center sticky left-[285px] bg-white dark:bg-gray-800 z-10' },
                           React.createElement('input', {
                             type: 'color',
                             value: item.color || '#3b82f6',
@@ -1314,7 +1367,7 @@
                           const hasValue = value > 0;
                           return React.createElement('td', {
                             key: sprint.name,
-                            className: `border p-1 ${hasValue ? 'bg-blue-50' : ''}`,
+                            className: `border dark:border-gray-600 p-1 ${hasValue ? 'bg-blue-50 dark:bg-blue-900/20' : 'dark:bg-gray-800'}`,
                             style: piBorderStyle(sprint.name, 'middle')
                           },
                             React.createElement('input', {
@@ -1323,15 +1376,15 @@
                               value: value,
                               onChange: (e) => updateAllocation(activeTeam, itemIdx, sprint.name, e.target.value),
                               placeholder: '0',
-                              className: `w-full px-1 py-1 border rounded text-center text-sm ${hasValue ? 'bg-blue-50 font-medium' : 'bg-white'}`,
+                              className: `w-full px-1 py-1 border dark:border-gray-600 rounded text-center text-sm ${hasValue ? 'bg-blue-50 dark:bg-blue-900/30 font-medium dark:text-blue-200' : 'bg-white dark:bg-gray-700 dark:text-gray-200'}`,
                               style: { width: '60px' }
                             })
                           );
                         }),
-                        React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-[40px] bg-white z-10', style: { minWidth: '80px' } },
+                        React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-[40px] bg-white dark:bg-gray-800 z-10', style: { minWidth: '80px' } },
                           Object.values(item.allocations).reduce((sum, val) => sum + val, 0)
                         ),
-                        React.createElement('td', { className: 'border p-2 text-center sticky right-0 bg-white z-10', style: { minWidth: '40px' } },
+                        React.createElement('td', { className: 'border p-2 text-center sticky right-0 bg-white dark:bg-gray-800 z-10', style: { minWidth: '40px' } },
                           React.createElement('button', {
                             onClick: () => removeItem(activeTeam, itemIdx),
                             className: 'p-1 text-red-600 hover:bg-red-50 rounded'
@@ -1339,10 +1392,10 @@
                         )
                       )
                     ),
-                    React.createElement('tr', { className: 'bg-blue-50 font-bold' },
-                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-blue-50 z-10' }),
-                      React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-blue-50 z-10' }, 'Capacity'),
-                      React.createElement('td', { className: 'border p-2 sticky left-[285px] bg-blue-50 z-10' }),
+                    React.createElement('tr', { className: 'bg-blue-50 dark:bg-blue-900/30 font-bold dark:text-gray-200' },
+                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-blue-50 dark:bg-blue-900/30 z-10' }),
+                      React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-blue-50 dark:bg-blue-900/30 z-10' }, 'Capacity'),
+                      React.createElement('td', { className: 'border p-2 sticky left-[285px] bg-blue-50 dark:bg-blue-900/30 z-10' }),
                       team.sprints.map(sprint =>
                         React.createElement('td', { key: sprint.name, className: 'border p-1 text-center', style: piBorderStyle(sprint.name, 'middle') },
                           React.createElement('input', {
@@ -1350,18 +1403,18 @@
                             min: '0',
                             value: sprint.capacity,
                             onChange: (e) => updateSprintCapacity(activeTeam, sprint.name, e.target.value),
-                            className: 'w-full px-1 py-1 border rounded text-center bg-white font-bold text-sm',
+                            className: 'w-full px-1 py-1 border dark:border-gray-600 rounded text-center bg-white dark:bg-gray-700 dark:text-white font-bold text-sm',
                             style: { width: '60px' }
                           })
                         )
                       ),
-                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-blue-50 z-10', style: { minWidth: '80px' } }),
-                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-blue-50 z-10', style: { minWidth: '40px' } })
+                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-blue-50 dark:bg-blue-900/30 z-10', style: { minWidth: '80px' } }),
+                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-blue-50 dark:bg-blue-900/30 z-10', style: { minWidth: '40px' } })
                     ),
-                    React.createElement('tr', { className: 'bg-white font-bold' },
-                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-white z-10' }),
-                      React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-white z-10' }, 'Total Allocated'),
-                      React.createElement('td', { className: 'border p-2 sticky left-[285px] bg-white z-10' }),
+                    React.createElement('tr', { className: 'bg-white dark:bg-gray-800 font-bold dark:text-gray-200' },
+                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-white dark:bg-gray-800 z-10' }),
+                      React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-white dark:bg-gray-800 z-10' }, 'Total Allocated'),
+                      React.createElement('td', { className: 'border p-2 sticky left-[285px] bg-white dark:bg-gray-800 z-10' }),
                       team.sprints.map(sprint => {
                         const total = team.developmentItems.reduce((sum, item) => sum + (item.allocations[sprint.name] || 0), 0);
                         return React.createElement('td', {
@@ -1370,25 +1423,25 @@
                           style: piBorderStyle(sprint.name, 'middle')
                         }, total);
                       }),
-                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-white z-10', style: { minWidth: '80px' } }),
-                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-white z-10', style: { minWidth: '40px' } })
+                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-white dark:bg-gray-800 z-10', style: { minWidth: '80px' } }),
+                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-white dark:bg-gray-800 z-10', style: { minWidth: '40px' } })
                     ),
-                    React.createElement('tr', { className: 'bg-green-50 font-bold' },
-                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-green-50 z-10' }),
-                      React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-green-50 z-10' }, 'Remaining Capacity'),
-                      React.createElement('td', { className: 'border p-2 sticky left-[285px] bg-green-50 z-10' }),
+                    React.createElement('tr', { className: 'bg-green-50 dark:bg-green-900/30 font-bold dark:text-gray-200' },
+                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-green-50 dark:bg-green-900/30 z-10' }),
+                      React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-green-50 dark:bg-green-900/30 z-10' }, 'Remaining Capacity'),
+                      React.createElement('td', { className: 'border p-2 sticky left-[285px] bg-green-50 dark:bg-green-900/30 z-10' }),
                       team.sprints.map(sprint => {
                         const allocated = team.developmentItems.reduce((sum, item) => sum + (item.allocations[sprint.name] || 0), 0);
                         const remaining = sprint.capacity - allocated;
                         const isNegative = remaining < 0;
                         return React.createElement('td', {
                           key: sprint.name,
-                          className: `border p-2 text-center ${isNegative ? 'bg-red-100 text-red-700' : 'bg-green-50'}`,
+                          className: `border dark:border-gray-600 p-2 text-center ${isNegative ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' : 'bg-green-50 dark:bg-green-900/30 dark:text-green-300'}`,
                           style: piBorderStyle(sprint.name, 'last')
                         }, remaining);
                       }),
-                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-green-50 z-10', style: { minWidth: '80px' } }),
-                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-green-50 z-10', style: { minWidth: '40px' } })
+                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-green-50 dark:bg-green-900/30 z-10', style: { minWidth: '80px' } }),
+                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-green-50 dark:bg-green-900/30 z-10', style: { minWidth: '40px' } })
                     )
                   )
                 )
@@ -1401,8 +1454,8 @@
                 React.createElement(Plus, { size: 20 }),
                 'Add Development Item'
               )
-            ) : React.createElement('div', { className: 'bg-white rounded-lg shadow-md p-6' },
-              React.createElement('h2', { className: 'text-2xl font-bold mb-4 text-gray-800' }, 'All Teams - Capacity Utilization'),
+            ) : React.createElement('div', { className: 'bg-white dark:bg-gray-800 rounded-lg shadow-md p-6' },
+              React.createElement('h2', { className: 'text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100' }, 'All Teams - Capacity Utilization'),
               
               React.createElement('div', { className: 'mb-6' },
                 React.createElement('div', { className: 'flex items-start gap-4' },
@@ -1432,7 +1485,7 @@
                             return React.createElement('div', { 
                               key: idx, 
                               style: { width: `${width}%` }, 
-                              className: 'text-center font-bold text-gray-700 text-sm' 
+                              className: 'text-center font-bold text-gray-700 dark:text-gray-300 text-sm' 
                             }, pos.month);
                           });
                         })()
@@ -1452,8 +1505,8 @@
                 )
               ),
 
-              React.createElement('div', { className: 'mb-4 p-4 bg-gray-50 rounded' },
-                React.createElement('h3', { className: 'font-bold mb-3 text-lg' }, 'Team Utilization Overview'),
+              React.createElement('div', { className: 'mb-4 p-4 bg-gray-50 dark:bg-gray-900 rounded' },
+                React.createElement('h3', { className: 'font-bold mb-3 text-lg dark:text-gray-100' }, 'Team Utilization Overview'),
                 React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3' },
                   teamOrder.map(teamName => {
                     if (!teams[teamName]) return null;
@@ -1471,7 +1524,7 @@
                     
                     return React.createElement('div', { 
                       key: teamName, 
-                      className: 'p-3 bg-white rounded border-l-4 hover:shadow-md transition-shadow',
+                      className: 'p-3 bg-white dark:bg-gray-800 rounded border-l-4 hover:shadow-md transition-shadow',
                       style: { borderLeftColor: team.color }
                     },
                       React.createElement('div', { className: 'flex items-center justify-between mb-2' },
@@ -1481,7 +1534,7 @@
                       React.createElement('div', { className: 'text-2xl font-bold mb-1', style: { color: statusColor } }, 
                         `${avgUtilization}%`
                       ),
-                      React.createElement('div', { className: 'text-xs text-gray-600 mb-1' }, 
+                      React.createElement('div', { className: 'text-xs text-gray-600 dark:text-gray-400 mb-1' }, 
                         `${totalAllocated} / ${totalCapacity} days`
                       ),
                       React.createElement('div', { className: 'text-xs text-gray-600' }, 
@@ -1490,7 +1543,7 @@
                     );
                   })
                 ),
-                React.createElement('div', { className: 'mt-3 pt-3 border-t text-xs text-gray-600' },
+                React.createElement('div', { className: 'mt-3 pt-3 border-t dark:border-gray-600 text-xs text-gray-600 dark:text-gray-400' },
                   React.createElement('div', { className: 'flex gap-4' },
                     React.createElement('span', null, '✓ 0-80%: Healthy'),
                     React.createElement('span', null, '⚡ 81-100%: High Load'),
@@ -1503,7 +1556,7 @@
                 React.createElement('table', { className: 'w-full border-collapse text-sm' },
                   React.createElement('thead', null,
                     React.createElement('tr', { className: 'bg-gray-200' },
-                      React.createElement('th', { className: 'border p-1 text-center sticky left-0 bg-gray-200 z-20 w-[120px]' }),
+                      React.createElement('th', { className: 'border p-1 text-center sticky left-0 bg-gray-200 dark:bg-gray-700 z-20 w-[120px]' }),
                       React.createElement('th', { className: 'border p-1 text-left sticky left-[120px] bg-gray-200 z-20 w-[300px]' }),
                       (() => {
                         let currentMonth = '';
@@ -1530,14 +1583,14 @@
                           React.createElement('th', { 
                             key: idx, 
                             colSpan: header.span, 
-                            className: 'border p-1 text-center font-bold text-gray-700' 
+                            className: 'border dark:border-gray-600 p-1 text-center font-bold text-gray-700 dark:text-gray-300' 
                           }, header.month)
                         );
                       })(),
-                      React.createElement('th', { className: 'border p-1 text-center sticky right-0 bg-gray-200 z-20 w-[90px]' })
+                      React.createElement('th', { className: 'border p-1 text-center sticky right-0 bg-gray-200 dark:bg-gray-700 z-20 w-[90px]' })
                     ),
                     React.createElement('tr', { className: 'bg-gray-100' },
-                      React.createElement('th', { className: 'border p-2 text-left sticky left-0 bg-gray-100 z-20 w-[120px]' }, 'Team'),
+                      React.createElement('th', { className: 'border p-2 text-left sticky left-0 bg-gray-100 dark:bg-gray-700 z-20 w-[120px]' }, 'Team'),
                       React.createElement('th', { className: 'border p-2 text-left sticky left-[120px] bg-gray-100 z-20 w-[300px]' }, 'Development Item'),
                       allSprints.map(sprint => {
                         const inSelectedPI = selectedPI && selectedPISprintNames.includes(sprint.name);
@@ -1547,7 +1600,7 @@
                           title: sprint.period
                         }, sprint.name);
                       }),
-                      React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 z-20 w-[90px]' }, 'Total Days')
+                      React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 dark:bg-gray-700 z-20 w-[90px]' }, 'Total Days')
                     )
                   ),
                   React.createElement('tbody', null,
@@ -1569,7 +1622,7 @@
                         ...items.map((item, itemIdx) =>
                           React.createElement('tr', { key: `${teamName}-${itemIdx}`, className: 'hover:bg-gray-50' },
                             React.createElement('td', { 
-                              className: 'border p-2 text-center sticky left-0 bg-white z-10',
+                              className: 'border p-2 text-center sticky left-0 bg-white dark:bg-gray-800 z-10',
                               style: { color: t.color }
                             },
                               React.createElement('div', { className: 'flex items-center justify-center gap-2' },
@@ -1602,7 +1655,7 @@
                                 }
                               }, value);
                             }),
-                            React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-0 bg-white z-10' },
+                            React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-0 bg-white dark:bg-gray-800 z-10' },
                               Object.values(item.allocations).reduce((sum, val) => sum + val, 0)
                             )
                           )
