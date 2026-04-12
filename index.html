@@ -17,9 +17,10 @@
       input[type="color"] { -webkit-appearance: none; border: none; padding: 0; }
       input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
       input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
-      .dark table td, .dark table th { border-color: #4b5563; }
-      .sticky-right-border { box-shadow: -1px 0 0 #4b5563; }
-      .dark .sticky-right-border { box-shadow: -1px 0 0 #4b5563; }
+      table { border-collapse: separate; border-spacing: 0; border-left: 1px solid #e5e7eb; border-top: 1px solid #e5e7eb; }
+      table td, table th { border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; }
+      .dark table { border-left-color: #4b5563; border-top-color: #4b5563; }
+      .dark table td, .dark table th { border-right-color: #4b5563; border-bottom-color: #4b5563; }
       .dark ::-webkit-scrollbar { width: 8px; height: 8px; }
       .dark ::-webkit-scrollbar-track { background: #1f2937; }
       .dark ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
@@ -1283,12 +1284,12 @@
               ),
 
               React.createElement('div', { className: 'overflow-x-auto' },
-                React.createElement('table', { className: 'w-full border-collapse text-sm dark:text-gray-200' },
+                React.createElement('table', { className: 'w-full text-sm dark:text-gray-200' },
                   React.createElement('thead', null,
                     React.createElement('tr', { className: 'bg-gray-200 dark:bg-gray-700' },
-                      React.createElement('th', { className: 'border p-1 text-center sticky left-0 bg-gray-200 dark:bg-gray-700 z-20 w-[40px]' }),
-                      React.createElement('th', { className: 'border p-1 text-center sticky left-[40px] bg-gray-200 dark:bg-gray-700 z-20 w-[40px]' }),
-                      React.createElement('th', { className: 'border p-1 text-left sticky left-[80px] bg-gray-200 dark:bg-gray-700 z-20', style: {minWidth: '245px'} }),
+                      React.createElement('th', { className: 'p-1 text-center sticky left-0 bg-gray-200 dark:bg-gray-700 z-20 w-[40px]' }),
+                      React.createElement('th', { className: 'p-1 text-center sticky left-[40px] bg-gray-200 dark:bg-gray-700 z-20 w-[40px]' }),
+                      React.createElement('th', { className: 'p-1 text-left sticky left-[80px] bg-gray-200 dark:bg-gray-700 z-20', style: {minWidth: '245px'} }),
                       (() => {
                         let currentMonth = '';
                         let monthSpan = 0;
@@ -1314,17 +1315,17 @@
                           React.createElement('th', { 
                             key: idx, 
                             colSpan: header.span, 
-                            className: 'border dark:border-gray-600 p-1 text-center font-bold text-gray-700 dark:text-gray-300' 
+                            className: 'p-1 text-center font-bold text-gray-700 dark:text-gray-300' 
                           }, header.month)
                         );
                       })(),
-                      React.createElement('th', { className: 'border p-1 text-center sticky right-[40px] sticky-right-border bg-gray-200 dark:bg-gray-700 z-20', style: { minWidth: '80px' } }),
-                      React.createElement('th', { className: 'border p-1 text-center sticky right-0 bg-gray-200 dark:bg-gray-700 z-20', style: { minWidth: '40px' } })
+                      React.createElement('th', { className: 'p-1 text-center sticky right-[40px] bg-gray-200 dark:bg-gray-700 z-20', style: { minWidth: '80px' } }),
+                      React.createElement('th', { className: 'p-1 text-center sticky right-0 bg-gray-200 dark:bg-gray-700 z-20', style: { minWidth: '40px' } })
                     ),
                     React.createElement('tr', { className: 'bg-gray-100 dark:bg-gray-700' },
-                      React.createElement('th', { className: 'border p-2 text-center sticky left-0 bg-gray-100 dark:bg-gray-700 z-20 w-[40px]' }),
-                      React.createElement('th', { className: 'border p-2 text-center sticky left-[40px] bg-gray-100 dark:bg-gray-700 z-20 w-[40px]' }),
-                      React.createElement('th', { className: 'border p-2 text-left sticky left-[80px] bg-gray-100 dark:bg-gray-700 z-20', style: {minWidth: '245px'} }, 'Development Item'),
+                      React.createElement('th', { className: 'p-2 text-center sticky left-0 bg-gray-100 dark:bg-gray-700 z-20 w-[40px]' }),
+                      React.createElement('th', { className: 'p-2 text-center sticky left-[40px] bg-gray-100 dark:bg-gray-700 z-20 w-[40px]' }),
+                      React.createElement('th', { className: 'p-2 text-left sticky left-[80px] bg-gray-100 dark:bg-gray-700 z-20', style: {minWidth: '245px'} }, 'Development Item'),
                       team.sprints.map(sprint => {
                         const inSelectedPI = selectedPI && selectedPISprintNames.includes(sprint.name);
                         return React.createElement('th', {
@@ -1334,8 +1335,8 @@
                           title: sprint.period
                         }, sprint.name);
                       }),
-                      React.createElement('th', { className: 'border p-2 text-center sticky right-[40px] sticky-right-border bg-gray-100 dark:bg-gray-700 z-20', style: { minWidth: '80px' } }, 'Total Days'),
-                      React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 dark:bg-gray-700 z-20', style: { minWidth: '40px' } }, 'Actions')
+                      React.createElement('th', { className: 'p-2 text-center sticky right-[40px] bg-gray-100 dark:bg-gray-700 z-20', style: { minWidth: '80px' } }, 'Total Days'),
+                      React.createElement('th', { className: 'p-2 text-center sticky right-0 bg-gray-100 dark:bg-gray-700 z-20', style: { minWidth: '40px' } }, 'Actions')
                     )
                   ),
                   React.createElement('tbody', null,
@@ -1351,10 +1352,10 @@
                         onDragOver: handleDragOver,
                         onDrop: (e) => handleDrop(e, activeTeam, itemIdx)
                       },
-                        React.createElement('td', { className: 'border p-2 text-center sticky left-0 bg-white dark:bg-gray-800 z-10 cursor-move' },
+                        React.createElement('td', { className: 'p-2 text-center sticky left-0 bg-white dark:bg-gray-800 z-10 cursor-move' },
                           React.createElement(GripVertical, { size: 18 })
                         ),
-                        React.createElement('td', { className: 'border p-2 text-center sticky left-[40px] bg-white dark:bg-gray-800 z-10' },
+                        React.createElement('td', { className: 'p-2 text-center sticky left-[40px] bg-white dark:bg-gray-800 z-10' },
                           React.createElement('input', {
                             type: 'color',
                             value: item.color || '#3b82f6',
@@ -1363,7 +1364,7 @@
                             style: { verticalAlign: 'middle' }
                           })
                         ),
-                        React.createElement('td', { className: 'border p-2 sticky left-[80px] bg-white dark:bg-gray-800 z-10' },
+                        React.createElement('td', { className: 'p-2 sticky left-[80px] bg-white dark:bg-gray-800 z-10' },
                           React.createElement('input', {
                             type: 'text',
                             value: item.name,
@@ -1377,7 +1378,7 @@
                           const hasValue = value > 0;
                           return React.createElement('td', {
                             key: sprint.name,
-                            className: `border dark:border-gray-600 p-1 ${hasValue ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`,
+                            className: `p-1 ${hasValue ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`,
                             style: piBorderStyle(sprint.name, 'middle')
                           },
                             React.createElement('input', {
@@ -1390,10 +1391,10 @@
                             })
                           );
                         }),
-                        React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-[40px] sticky-right-border bg-white dark:bg-gray-800 z-10', style: { minWidth: '80px' } },
+                        React.createElement('td', { className: 'p-2 text-center font-bold sticky right-[40px] bg-white dark:bg-gray-800 z-10', style: { minWidth: '80px' } },
                           Object.values(item.allocations).reduce((sum, val) => sum + val, 0)
                         ),
-                        React.createElement('td', { className: 'border p-2 text-center sticky right-0 bg-white dark:bg-gray-800 z-10', style: { minWidth: '40px' } },
+                        React.createElement('td', { className: 'p-2 text-center sticky right-0 bg-white dark:bg-gray-800 z-10', style: { minWidth: '40px' } },
                           React.createElement('button', {
                             onClick: () => removeItem(activeTeam, itemIdx),
                             className: 'p-1 text-red-600 hover:bg-red-50 rounded'
@@ -1402,11 +1403,11 @@
                       )
                     ),
                     React.createElement('tr', { className: 'bg-gray-100 dark:bg-gray-700 font-bold dark:text-gray-200' },
-                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-gray-100 dark:bg-gray-700 z-10' }),
-                      React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-gray-100 dark:bg-gray-700 z-10' }),
-                      React.createElement('td', { className: 'border p-2 sticky left-[80px] bg-gray-100 dark:bg-gray-700 z-10' }, 'Capacity'),
+                      React.createElement('td', { className: 'p-2 sticky left-0 bg-gray-100 dark:bg-gray-700 z-10' }),
+                      React.createElement('td', { className: 'p-2 sticky left-[40px] bg-gray-100 dark:bg-gray-700 z-10' }),
+                      React.createElement('td', { className: 'p-2 sticky left-[80px] bg-gray-100 dark:bg-gray-700 z-10' }, 'Capacity'),
                       team.sprints.map(sprint =>
-                        React.createElement('td', { key: sprint.name, className: 'border p-1 text-center', style: piBorderStyle(sprint.name, 'middle') },
+                        React.createElement('td', { key: sprint.name, className: 'p-1 text-center', style: piBorderStyle(sprint.name, 'middle') },
                           React.createElement('input', {
                             type: 'number',
                             min: '0',
@@ -1416,40 +1417,40 @@
                           })
                         )
                       ),
-                      React.createElement('td', { className: 'border p-2 sticky right-[40px] sticky-right-border bg-gray-100 dark:bg-gray-700 z-10', style: { minWidth: '80px' } }),
-                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-gray-100 dark:bg-gray-700 z-10', style: { minWidth: '40px' } })
+                      React.createElement('td', { className: 'p-2 sticky right-[40px] bg-gray-100 dark:bg-gray-700 z-10', style: { minWidth: '80px' } }),
+                      React.createElement('td', { className: 'p-2 sticky right-0 bg-gray-100 dark:bg-gray-700 z-10', style: { minWidth: '40px' } })
                     ),
                     React.createElement('tr', { className: 'bg-white dark:bg-gray-800 font-bold dark:text-gray-200' },
-                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-white dark:bg-gray-800 z-10' }),
-                      React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-white dark:bg-gray-800 z-10' }),
-                      React.createElement('td', { className: 'border p-2 sticky left-[80px] bg-white dark:bg-gray-800 z-10' }, 'Total Allocated'),
+                      React.createElement('td', { className: 'p-2 sticky left-0 bg-white dark:bg-gray-800 z-10' }),
+                      React.createElement('td', { className: 'p-2 sticky left-[40px] bg-white dark:bg-gray-800 z-10' }),
+                      React.createElement('td', { className: 'p-2 sticky left-[80px] bg-white dark:bg-gray-800 z-10' }, 'Total Allocated'),
                       team.sprints.map(sprint => {
                         const total = team.developmentItems.reduce((sum, item) => sum + (item.allocations[sprint.name] || 0), 0);
                         return React.createElement('td', {
                           key: sprint.name,
-                          className: 'border p-2 text-center',
+                          className: 'p-2 text-center',
                           style: piBorderStyle(sprint.name, 'middle')
                         }, total);
                       }),
-                      React.createElement('td', { className: 'border p-2 sticky right-[40px] sticky-right-border bg-white dark:bg-gray-800 z-10', style: { minWidth: '80px' } }),
-                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-white dark:bg-gray-800 z-10', style: { minWidth: '40px' } })
+                      React.createElement('td', { className: 'p-2 sticky right-[40px] bg-white dark:bg-gray-800 z-10', style: { minWidth: '80px' } }),
+                      React.createElement('td', { className: 'p-2 sticky right-0 bg-white dark:bg-gray-800 z-10', style: { minWidth: '40px' } })
                     ),
                     React.createElement('tr', { className: 'bg-green-50 dark:bg-green-900/30 font-bold dark:text-gray-200' },
-                      React.createElement('td', { className: 'border p-2 sticky left-0 bg-green-50 dark:bg-green-900/30 z-10' }),
-                      React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-green-50 dark:bg-green-900/30 z-10' }),
-                      React.createElement('td', { className: 'border p-2 sticky left-[80px] bg-green-50 dark:bg-green-900/30 z-10' }, 'Remaining Capacity'),
+                      React.createElement('td', { className: 'p-2 sticky left-0 bg-green-50 dark:bg-green-900/30 z-10' }),
+                      React.createElement('td', { className: 'p-2 sticky left-[40px] bg-green-50 dark:bg-green-900/30 z-10' }),
+                      React.createElement('td', { className: 'p-2 sticky left-[80px] bg-green-50 dark:bg-green-900/30 z-10' }, 'Remaining Capacity'),
                       team.sprints.map(sprint => {
                         const allocated = team.developmentItems.reduce((sum, item) => sum + (item.allocations[sprint.name] || 0), 0);
                         const remaining = sprint.capacity - allocated;
                         const isNegative = remaining < 0;
                         return React.createElement('td', {
                           key: sprint.name,
-                          className: `border dark:border-gray-600 p-2 text-center ${isNegative ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' : 'bg-green-50 dark:bg-green-900/30 dark:text-green-300'}`,
+                          className: `p-2 text-center ${isNegative ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' : 'bg-green-50 dark:bg-green-900/30 dark:text-green-300'}`,
                           style: piBorderStyle(sprint.name, 'last')
                         }, remaining);
                       }),
-                      React.createElement('td', { className: 'border p-2 sticky right-[40px] sticky-right-border bg-green-50 dark:bg-green-900/30 z-10', style: { minWidth: '80px' } }),
-                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-green-50 dark:bg-green-900/30 z-10', style: { minWidth: '40px' } })
+                      React.createElement('td', { className: 'p-2 sticky right-[40px] bg-green-50 dark:bg-green-900/30 z-10', style: { minWidth: '80px' } }),
+                      React.createElement('td', { className: 'p-2 sticky right-0 bg-green-50 dark:bg-green-900/30 z-10', style: { minWidth: '40px' } })
                     )
                   )
                 )
@@ -1561,11 +1562,11 @@
               ),
 
               React.createElement('div', { className: 'overflow-x-auto' },
-                React.createElement('table', { className: 'w-full border-collapse text-sm dark:text-gray-200' },
+                React.createElement('table', { className: 'w-full text-sm dark:text-gray-200' },
                   React.createElement('thead', null,
                     React.createElement('tr', { className: 'bg-gray-200 dark:bg-gray-700' },
-                      React.createElement('th', { className: 'border p-1 text-center sticky left-0 bg-gray-200 dark:bg-gray-700 z-20 w-[120px]' }),
-                      React.createElement('th', { className: 'border p-1 text-left sticky left-[120px] bg-gray-200 dark:bg-gray-700 z-20 w-[300px]' }),
+                      React.createElement('th', { className: 'p-1 text-center sticky left-0 bg-gray-200 dark:bg-gray-700 z-20 w-[120px]' }),
+                      React.createElement('th', { className: 'p-1 text-left sticky left-[120px] bg-gray-200 dark:bg-gray-700 z-20 w-[300px]' }),
                       (() => {
                         let currentMonth = '';
                         let monthSpan = 0;
@@ -1591,15 +1592,15 @@
                           React.createElement('th', { 
                             key: idx, 
                             colSpan: header.span, 
-                            className: 'border dark:border-gray-600 p-1 text-center font-bold text-gray-700 dark:text-gray-300' 
+                            className: 'p-1 text-center font-bold text-gray-700 dark:text-gray-300' 
                           }, header.month)
                         );
                       })(),
-                      React.createElement('th', { className: 'border p-1 text-center sticky right-0 bg-gray-200 dark:bg-gray-700 z-20 w-[90px]' })
+                      React.createElement('th', { className: 'p-1 text-center sticky right-0 bg-gray-200 dark:bg-gray-700 z-20 w-[90px]' })
                     ),
                     React.createElement('tr', { className: 'bg-gray-100 dark:bg-gray-700' },
-                      React.createElement('th', { className: 'border p-2 text-left sticky left-0 bg-gray-100 dark:bg-gray-700 z-20 w-[120px]' }, 'Team'),
-                      React.createElement('th', { className: 'border p-2 text-left sticky left-[120px] bg-gray-100 dark:bg-gray-700 z-20 w-[300px]' }, 'Development Item'),
+                      React.createElement('th', { className: 'p-2 text-left sticky left-0 bg-gray-100 dark:bg-gray-700 z-20 w-[120px]' }, 'Team'),
+                      React.createElement('th', { className: 'p-2 text-left sticky left-[120px] bg-gray-100 dark:bg-gray-700 z-20 w-[300px]' }, 'Development Item'),
                       allSprints.map(sprint => {
                         const inSelectedPI = selectedPI && selectedPISprintNames.includes(sprint.name);
                         return React.createElement('th', {
@@ -1608,7 +1609,7 @@
                           title: sprint.period
                         }, sprint.name);
                       }),
-                      React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 dark:bg-gray-700 z-20 w-[90px]' }, 'Total Days')
+                      React.createElement('th', { className: 'p-2 text-center sticky right-0 bg-gray-100 dark:bg-gray-700 z-20 w-[90px]' }, 'Total Days')
                     )
                   ),
                   React.createElement('tbody', null,
@@ -1623,14 +1624,14 @@
                         React.createElement('tr', { key: `${teamName}-header`, className: 'bg-gray-50 dark:bg-gray-700' },
                           React.createElement('td', { 
                             colSpan: allSprints.length + 3,
-                            className: 'border p-2 font-bold sticky left-0 z-10',
+                            className: 'p-2 font-bold sticky left-0 z-10',
                             style: { backgroundColor: t.color + '20', color: t.color }
                           }, `${teamName} Team`)
                         ),
                         ...items.map((item, itemIdx) =>
                           React.createElement('tr', { key: `${teamName}-${itemIdx}`, className: 'hover:bg-gray-50 dark:hover:bg-gray-700/50' },
                             React.createElement('td', { 
-                              className: 'border p-2 text-center sticky left-0 bg-white dark:bg-gray-800 z-10',
+                              className: 'p-2 text-center sticky left-0 bg-white dark:bg-gray-800 z-10',
                               style: { color: t.color }
                             },
                               React.createElement('div', { className: 'flex items-center justify-center gap-2' },
@@ -1641,7 +1642,7 @@
                                 React.createElement('span', { className: 'font-medium text-xs' }, teamName)
                               )
                             ),
-                            React.createElement('td', { className: 'border p-2 sticky left-[120px] bg-white dark:bg-gray-800 z-10' },
+                            React.createElement('td', { className: 'p-2 sticky left-[120px] bg-white dark:bg-gray-800 z-10' },
                               React.createElement('div', { className: 'flex items-center gap-2' },
                                 React.createElement('div', { 
                                   className: 'w-4 h-4 rounded',
@@ -1663,7 +1664,7 @@
                                 }
                               }, value);
                             }),
-                            React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-0 bg-white dark:bg-gray-800 z-10 dark:text-gray-200' },
+                            React.createElement('td', { className: 'p-2 text-center font-bold sticky right-0 bg-white dark:bg-gray-800 z-10 dark:text-gray-200' },
                               Object.values(item.allocations).reduce((sum, val) => sum + val, 0)
                             )
                           )
