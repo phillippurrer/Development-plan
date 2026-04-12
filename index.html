@@ -68,6 +68,39 @@
         // Custom Chart.js plugin: paints PI background bands and labels
         const piBackgroundPlugin = {
           id: 'piBackground',
+          _hoveredPI: null,
+          _piRects: [],
+
+          _computeRects: (chart, options) => {
+            const rects = [];
+            if (!options || !options.pis || options.pis.length === 0) return rects;
+            const { chartArea, scales } = chart;
+            const xScale = scales.x;
+            if (!xScale) return rects;
+
+            const labelCount = chart.data.labels ? chart.data.labels.length : 0;
+            if (labelCount === 0) return rects;
+
+            let halfBand = 20;
+            if (labelCount > 1) {
+              halfBand = (xScale.getPixelForValue(1) - xScale.getPixelForValue(0)) / 2;
+            } else {
+              halfBand = (chartArea.right - chartArea.left) / 2;
+            }
+
+            options.pis.forEach((pi) => {
+              if (!pi.sprintIndices || pi.sprintIndices.length === 0) return;
+              const firstIdx = pi.sprintIndices[0];
+              const lastIdx = pi.sprintIndices[pi.sprintIndices.length - 1];
+              const firstPx = xScale.getPixelForValue(firstIdx);
+              const lastPx = xScale.getPixelForValue(lastIdx);
+              const left = Math.max(chartArea.left, firstPx - halfBand);
+              const right = Math.min(chartArea.right, lastPx + halfBand);
+              rects.push({ name: pi.name, left, right, top: chartArea.top, bottom: chartArea.bottom });
+            });
+            return rects;
+          },
+
           beforeDatasetsDraw: (chart, args, options) => {
             if (!options || !options.pis || options.pis.length === 0) return;
             const { ctx, chartArea, scales } = chart;
@@ -84,6 +117,8 @@
               halfBand = (chartArea.right - chartArea.left) / 2;
             }
 
+            const hoveredPI = piBackgroundPlugin._hoveredPI;
+
             options.pis.forEach((pi, idx) => {
               if (!pi.sprintIndices || pi.sprintIndices.length === 0) return;
               const firstIdx = pi.sprintIndices[0];
@@ -96,29 +131,122 @@
               if (width <= 0) return;
 
               const isSelected = options.selectedPI === pi.name;
+              const isHovered = hoveredPI === pi.name && !isSelected;
 
               ctx.save();
               if (isSelected) {
                 ctx.fillStyle = 'rgba(59, 130, 246, 0.18)';
+              } else if (isHovered) {
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.10)';
               } else {
                 ctx.fillStyle = idx % 2 === 0 ? 'rgba(148, 163, 184, 0.10)' : 'rgba(148, 163, 184, 0.03)';
               }
               ctx.fillRect(left, chartArea.top, width, chartArea.bottom - chartArea.top);
 
               // Border between PIs
-              ctx.strokeStyle = isSelected ? '#2563eb' : 'rgba(148, 163, 184, 0.45)';
-              ctx.lineWidth = isSelected ? 2 : 1;
+              if (isSelected) {
+                ctx.strokeStyle = '#2563eb';
+                ctx.lineWidth = 2;
+              } else if (isHovered) {
+                ctx.strokeStyle = '#60a5fa';
+                ctx.lineWidth = 2;
+              } else {
+                ctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
+                ctx.lineWidth = 1;
+              }
               ctx.strokeRect(left + 0.5, chartArea.top + 0.5, width - 1, chartArea.bottom - chartArea.top - 1);
 
               // PI label at the very top of the band
-              ctx.fillStyle = isSelected ? '#1e3a8a' : '#475569';
-              ctx.font = isSelected ? 'bold 11px sans-serif' : '600 10px sans-serif';
+              if (isSelected) {
+                ctx.fillStyle = '#1e3a8a';
+                ctx.font = 'bold 11px sans-serif';
+              } else if (isHovered) {
+                ctx.fillStyle = '#2563eb';
+                ctx.font = 'bold 11px sans-serif';
+              } else {
+                ctx.fillStyle = '#475569';
+                ctx.font = '600 10px sans-serif';
+              }
               ctx.textAlign = 'center';
               ctx.textBaseline = 'top';
               ctx.fillText(pi.name, left + width / 2, chartArea.top + 2);
 
               ctx.restore();
             });
+          },
+
+          afterEvent: (chart, args, options) => {
+            const event = args.event;
+            if (!options || !options.pis) return;
+
+            const nativeEvent = event.native;
+
+            if (event.type === 'mousemove') {
+              const rects = piBackgroundPlugin._computeRects(chart, options);
+              const x = event.x;
+              const y = event.y;
+              let foundPI = null;
+
+              // Only highlight PI if NOT hovering over a bar element
+              let overBar = false;
+              if (nativeEvent) {
+                const elements = chart.getElementsAtEventForMode(nativeEvent, 'point', { intersect: true }, false);
+                overBar = elements.some(el => {
+                  const ds = chart.data.datasets[el.datasetIndex];
+                  return ds && ds.stack === 'allocations' && ds.data[el.index] > 0;
+                });
+              }
+
+              if (!overBar) {
+                for (const rect of rects) {
+                  if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                    foundPI = rect.name;
+                    break;
+                  }
+                }
+              }
+
+              if (piBackgroundPlugin._hoveredPI !== foundPI) {
+                piBackgroundPlugin._hoveredPI = foundPI;
+                chart.canvas.style.cursor = foundPI ? 'pointer' : '';
+                chart.draw();
+              }
+            }
+
+            if (event.type === 'mouseout') {
+              if (piBackgroundPlugin._hoveredPI !== null) {
+                piBackgroundPlugin._hoveredPI = null;
+                chart.canvas.style.cursor = '';
+                chart.draw();
+              }
+            }
+
+            if (event.type === 'click') {
+              const rects = piBackgroundPlugin._computeRects(chart, options);
+              const x = event.x;
+              const y = event.y;
+
+              // Only handle click if NOT clicking on a bar element
+              let overBar = false;
+              if (nativeEvent) {
+                const elements = chart.getElementsAtEventForMode(nativeEvent, 'point', { intersect: true }, false);
+                overBar = elements.some(el => {
+                  const ds = chart.data.datasets[el.datasetIndex];
+                  return ds && ds.stack === 'allocations' && ds.data[el.index] > 0;
+                });
+              }
+
+              if (!overBar) {
+                for (const rect of rects) {
+                  if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                    if (options.onPIClick) {
+                      options.onPIClick(rect.name);
+                    }
+                    break;
+                  }
+                }
+              }
+            }
           }
         };
         if (typeof Chart !== 'undefined') {
@@ -438,8 +566,8 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: {
-                  mode: 'index',
-                  intersect: false
+                  mode: 'point',
+                  intersect: true
                 },
                 plugins: {
                   legend: {
@@ -451,29 +579,26 @@
                     }
                   },
                   tooltip: {
+                    filter: (tooltipItem) => {
+                      return tooltipItem.dataset.stack === 'allocations' && tooltipItem.raw > 0;
+                    },
                     callbacks: {
-                      title: (tooltipItems) => {
-                        const sprintIndex = tooltipItems[0].dataIndex;
-                        const sprint = team.sprints[sprintIndex];
-                        const pi = findPIForSprint(pis, sprint.name);
-                        return `${sprint.name}${pi ? ' — ' + pi.name : ''}`;
+                      title: () => '',
+                      label: (context) => {
+                        return `${context.dataset.label}: ${context.raw} days`;
                       },
-                      footer: (tooltipItems) => {
-                        const sprintIndex = tooltipItems[0].dataIndex;
-                        const allocated = datasets
-                          .filter(d => d.stack === 'allocations')
-                          .reduce((sum, d) => sum + d.data[sprintIndex], 0);
-                        const capacity = team.sprints[sprintIndex].capacity;
-                        const remaining = capacity - allocated;
-                        return `\nTotal Allocated: ${allocated}\nCapacity: ${capacity}\nRemaining: ${remaining}`;
-                      }
+                      footer: () => ''
                     }
                   },
                   piBackground: {
                     pis: pis,
-                    selectedPI: selectedPI
+                    selectedPI: selectedPI,
+                    onPIClick: (piName) => {
+                      setSelectedPI(prev => prev === piName ? null : piName);
+                    }
                   }
                 },
+                events: ['mousemove', 'mouseout', 'click'],
                 scales: {
                   x: {
                     stacked: true,
@@ -617,9 +742,13 @@
                   },
                   piBackground: {
                     pis: pis,
-                    selectedPI: selectedPI
+                    selectedPI: selectedPI,
+                    onPIClick: (piName) => {
+                      setSelectedPI(prev => prev === piName ? null : piName);
+                    }
                   }
                 },
+                events: ['mousemove', 'mouseout', 'click'],
                 scales: {
                   x: {
                     ticks: {
