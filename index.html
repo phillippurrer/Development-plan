@@ -571,12 +571,7 @@
                 },
                 plugins: {
                   legend: {
-                    position: 'right',
-                    labels: {
-                      boxWidth: 12,
-                      padding: 8,
-                      font: { size: 10 }
-                    }
+                    display: false
                   },
                   tooltip: {
                     filter: (tooltipItem) => {
@@ -618,7 +613,7 @@
                 animation: false,
                 layout: {
                   padding: {
-                    right: 20,
+                    right: 10,
                     top: 18
                   }
                 }
@@ -1168,12 +1163,12 @@
                 React.createElement('div', { className: 'flex items-start gap-4' },
                   React.createElement('div', { className: 'flex-1 min-w-0' },
                     React.createElement('div', { className: 'flex items-start mb-2' },
-                      React.createElement('div', { className: 'flex justify-start gap-0', style: { width: 'calc(100% - 220px)' } },
+                      React.createElement('div', { className: 'flex justify-start gap-0', style: { width: '100%' } },
                         (() => {
                           let currentMonth = '';
                           const monthPositions = [];
                           let startIdx = 0;
-                          
+
                           team.sprints.forEach((sprint, idx) => {
                             if (sprint.month !== currentMonth) {
                               if (currentMonth) {
@@ -1186,18 +1181,17 @@
                               monthPositions.push({ month: currentMonth, start: startIdx, end: idx });
                             }
                           });
-                          
+
                           return monthPositions.map((pos, idx) => {
                             const width = ((pos.end - pos.start + 1) / team.sprints.length) * 100;
-                            return React.createElement('div', { 
-                              key: idx, 
-                              style: { width: `${width}%` }, 
-                              className: 'text-center font-bold text-gray-700 text-sm' 
+                            return React.createElement('div', {
+                              key: idx,
+                              style: { width: `${width}%` },
+                              className: 'text-center font-bold text-gray-700 text-sm'
                             }, pos.month);
                           });
                         })()
-                      ),
-                      React.createElement('div', { style: { width: '220px' } })
+                      )
                     ),
                     React.createElement('div', { style: { height: '400px', position: 'relative' }, key: activeTeam },
                       React.createElement('canvas', { 
@@ -1249,7 +1243,7 @@
                           }, header.month)
                         );
                       })(),
-                      React.createElement('th', { className: 'border p-1 text-center sticky right-[40px] bg-gray-200 z-20 w-[100px]' }),
+                      React.createElement('th', { className: 'border p-1 text-center sticky right-[40px] bg-gray-200 z-20 w-[100px]', style: { boxShadow: '-3px 0 6px rgba(0,0,0,0.08)' } }),
                       React.createElement('th', { className: 'border p-1 text-center sticky right-0 bg-gray-200 z-20 w-[40px]' })
                     ),
                     React.createElement('tr', { className: 'bg-gray-100' },
@@ -1260,11 +1254,11 @@
                         const inSelectedPI = selectedPI && selectedPISprintNames.includes(sprint.name);
                         return React.createElement('th', {
                           key: sprint.name,
-                          className: `border p-2 text-center w-[70px] ${inSelectedPI ? 'bg-blue-200 text-blue-900' : ''}`,
+                          className: `border p-2 text-center w-[70px] ${inSelectedPI ? 'bg-blue-100 font-bold' : ''}`,
                           title: sprint.period
                         }, sprint.name);
                       }),
-                      React.createElement('th', { className: 'border p-2 text-center sticky right-[40px] bg-gray-100 z-20 w-[100px]' }, 'Total Days'),
+                      React.createElement('th', { className: 'border p-2 text-center sticky right-[40px] bg-gray-100 z-20 w-[100px]', style: { boxShadow: '-3px 0 6px rgba(0,0,0,0.08)' } }, 'Total Days'),
                       React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 z-20 w-[40px]' }, 'Actions')
                     )
                   ),
@@ -1307,7 +1301,7 @@
                           const inSelectedPI = selectedPI && selectedPISprintNames.includes(sprint.name);
                           return React.createElement('td', {
                             key: sprint.name,
-                            className: `border p-1 ${hasValue ? 'bg-blue-50' : ''} ${inSelectedPI ? 'ring-1 ring-blue-300' : ''}`
+                            className: `border p-1 ${hasValue ? 'bg-blue-50' : ''} ${inSelectedPI ? 'bg-blue-50' : ''}`
                           },
                             React.createElement('input', {
                               type: 'number',
@@ -1320,7 +1314,7 @@
                             })
                           );
                         }),
-                        React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-[40px] bg-white z-10 w-[100px]' },
+                        React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-[40px] bg-white z-10 w-[100px]', style: { boxShadow: '-3px 0 6px rgba(0,0,0,0.08)' } },
                           Object.values(item.allocations).reduce((sum, val) => sum + val, 0)
                         ),
                         React.createElement('td', { className: 'border p-2 text-center sticky right-0 bg-white z-10' },
@@ -1347,7 +1341,7 @@
                           })
                         )
                       ),
-                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-blue-50 z-10 w-[100px]' }),
+                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-blue-50 z-10 w-[100px]', style: { boxShadow: '-3px 0 6px rgba(0,0,0,0.08)' } }),
                       React.createElement('td', { className: 'border p-2 sticky right-0 bg-blue-50 z-10' })
                     ),
                     React.createElement('tr', { className: 'bg-white font-bold' },
@@ -1361,7 +1355,7 @@
                           className: 'border p-2 text-center' 
                         }, total);
                       }),
-                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-white z-10 w-[100px]' }),
+                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-white z-10 w-[100px]', style: { boxShadow: '-3px 0 6px rgba(0,0,0,0.08)' } }),
                       React.createElement('td', { className: 'border p-2 sticky right-0 bg-white z-10' })
                     ),
                     React.createElement('tr', { className: 'bg-green-50 font-bold' },
@@ -1377,7 +1371,7 @@
                           className: `border p-2 text-center ${isNegative ? 'bg-red-100 text-red-700' : 'bg-green-50'}` 
                         }, remaining);
                       }),
-                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-green-50 z-10 w-[100px]' }),
+                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-green-50 z-10 w-[100px]', style: { boxShadow: '-3px 0 6px rgba(0,0,0,0.08)' } }),
                       React.createElement('td', { className: 'border p-2 sticky right-0 bg-green-50 z-10' })
                     )
                   )
@@ -1533,7 +1527,7 @@
                         const inSelectedPI = selectedPI && selectedPISprintNames.includes(sprint.name);
                         return React.createElement('th', {
                           key: sprint.name,
-                          className: `border p-2 text-center w-[70px] ${inSelectedPI ? 'bg-blue-200 text-blue-900' : ''}`,
+                          className: `border p-2 text-center w-[70px] ${inSelectedPI ? 'bg-blue-100 font-bold' : ''}`,
                           title: sprint.period
                         }, sprint.name);
                       }),
@@ -1585,7 +1579,7 @@
                               const inSelectedPI = selectedPI && selectedPISprintNames.includes(sprint.name);
                               return React.createElement('td', {
                                 key: sprint.name,
-                                className: `border p-2 text-center ${hasValue ? 'font-medium' : ''} ${inSelectedPI ? 'ring-1 ring-blue-300' : ''}`,
+                                className: `border p-2 text-center ${hasValue ? 'font-medium' : ''} ${inSelectedPI ? 'bg-blue-50' : ''}`,
                                 style: {
                                   width: '70px',
                                   backgroundColor: hasValue ? t.color + '15' : 'transparent'
