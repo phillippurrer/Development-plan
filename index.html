@@ -1361,13 +1361,25 @@
                             className: 'w-full px-2 py-1 border dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white'
                           })
                         ),
-                        React.createElement('td', { className: 'border p-2 text-center sticky left-[285px] bg-white dark:bg-gray-800 z-10' },
-                          React.createElement('input', {
-                            type: 'color',
-                            value: item.color || '#3b82f6',
-                            onChange: (e) => updateItemColor(activeTeam, itemIdx, e.target.value),
-                            className: 'w-12 h-8 cursor-pointer border-0 p-0 rounded'
-                          })
+                        React.createElement('td', { className: 'border p-1 text-center sticky left-[285px] bg-white dark:bg-gray-800 z-10' },
+                          React.createElement('div', { className: 'flex flex-col items-center gap-1' },
+                            React.createElement('input', {
+                              type: 'color',
+                              value: item.color || '#3b82f6',
+                              onChange: (e) => updateItemColor(activeTeam, itemIdx, e.target.value),
+                              className: 'w-10 h-5 cursor-pointer border-0 p-0 rounded'
+                            }),
+                            React.createElement('input', {
+                              type: 'text',
+                              value: item.color || '#3b82f6',
+                              onChange: (e) => {
+                                const v = e.target.value;
+                                if (/^#[0-9a-fA-F]{0,6}$/.test(v)) updateItemColor(activeTeam, itemIdx, v);
+                              },
+                              className: 'w-16 text-center text-xs font-mono border dark:border-gray-600 rounded px-1 py-0.5 bg-transparent dark:text-gray-300',
+                              maxLength: 7
+                            })
+                          )
                         ),
                         team.sprints.map(sprint => {
                           const value = item.allocations[sprint.name] || '';
