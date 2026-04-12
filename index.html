@@ -1321,7 +1321,7 @@
                         const inSelectedPI = selectedPI && selectedPISprintNames.includes(sprint.name);
                         return React.createElement('th', {
                           key: sprint.name,
-                          className: `border p-2 text-center w-[70px] ${inSelectedPI ? 'bg-blue-50' : ''}`,
+                          className: `border p-2 text-center w-[70px] ${inSelectedPI ? 'bg-blue-100 dark:bg-blue-900/40' : ''}`,
                           style: piBorderStyle(sprint.name, 'first'),
                           title: sprint.period
                         }, sprint.name);
@@ -1597,7 +1597,7 @@
                         const inSelectedPI = selectedPI && selectedPISprintNames.includes(sprint.name);
                         return React.createElement('th', {
                           key: sprint.name,
-                          className: `border p-2 text-center w-[70px] ${inSelectedPI ? 'bg-blue-100 font-bold' : ''}`,
+                          className: `border p-2 text-center w-[70px] ${inSelectedPI ? 'bg-blue-100 dark:bg-blue-900/40 font-bold' : ''}`,
                           title: sprint.period
                         }, sprint.name);
                       }),
@@ -1649,7 +1649,7 @@
                               const inSelectedPI = selectedPI && selectedPISprintNames.includes(sprint.name);
                               return React.createElement('td', {
                                 key: sprint.name,
-                                className: `border p-2 text-center ${hasValue ? 'font-medium' : ''} ${inSelectedPI ? 'bg-blue-50' : ''}`,
+                                className: `border p-2 text-center ${hasValue ? 'font-medium' : ''} ${inSelectedPI ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`,
                                 style: {
                                   width: '70px',
                                   backgroundColor: hasValue ? t.color + '15' : 'transparent'
