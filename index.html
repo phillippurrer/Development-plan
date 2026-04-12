@@ -11,6 +11,9 @@
     <script>if(localStorage.getItem('darkMode')==='true')document.documentElement.classList.add('dark')</script>
     <style>
       .dark input[type="number"], .dark input[type="text"] { color-scheme: dark; }
+      input[type="color"] { -webkit-appearance: none; border: none; padding: 0; }
+      input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+      input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
       .dark table td, .dark table th { border-color: #374151; }
       .dark ::-webkit-scrollbar { width: 8px; height: 8px; }
       .dark ::-webkit-scrollbar-track { background: #1f2937; }
@@ -1360,7 +1363,7 @@
                             type: 'color',
                             value: item.color || '#3b82f6',
                             onChange: (e) => updateItemColor(activeTeam, itemIdx, e.target.value),
-                            className: 'w-12 h-8 cursor-pointer'
+                            className: 'w-12 h-8 cursor-pointer border-0 p-0 rounded'
                           })
                         ),
                         team.sprints.map(sprint => {
@@ -1368,7 +1371,7 @@
                           const hasValue = value > 0;
                           return React.createElement('td', {
                             key: sprint.name,
-                            className: `border dark:border-gray-600 p-1 ${hasValue ? 'bg-blue-50 dark:bg-blue-900/20' : 'dark:bg-gray-800'}`,
+                            className: `border dark:border-gray-600 p-1 ${hasValue ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`,
                             style: piBorderStyle(sprint.name, 'middle')
                           },
                             React.createElement('input', {
@@ -1377,7 +1380,7 @@
                               value: value,
                               onChange: (e) => updateAllocation(activeTeam, itemIdx, sprint.name, e.target.value),
                               placeholder: '0',
-                              className: `w-full px-1 py-1 border dark:border-gray-600 rounded text-center text-sm ${hasValue ? 'bg-blue-50 dark:bg-blue-900/30 font-medium dark:text-blue-200' : 'bg-white dark:bg-gray-700 dark:text-gray-200'}`,
+                              className: `w-full py-1 rounded text-center text-sm ${hasValue ? 'bg-blue-50 dark:bg-blue-900/30 font-medium dark:text-blue-200 border dark:border-gray-600' : 'bg-transparent border-transparent text-gray-400 dark:text-gray-600'}`,
                               style: { width: '60px' }
                             })
                           );
