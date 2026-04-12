@@ -1017,13 +1017,15 @@
           };
           const piFirstSprint = selectedPISprintNames.length > 0 ? selectedPISprintNames[0] : null;
           const piLastSprint = selectedPISprintNames.length > 0 ? selectedPISprintNames[selectedPISprintNames.length - 1] : null;
-          const piBorderStyle = (sprintName) => {
+          const piBorderStyle = (sprintName, pos) => {
             if (!selectedPI) return {};
             const inPI = selectedPISprintNames.includes(sprintName);
             if (!inPI) return {};
-            const style = { borderTop: '2px solid #3b82f6', borderBottom: '2px solid #3b82f6' };
+            const style = {};
             if (sprintName === piFirstSprint) style.borderLeft = '2px solid #3b82f6';
             if (sprintName === piLastSprint) style.borderRight = '2px solid #3b82f6';
+            if (pos === 'first') style.borderTop = '2px solid #3b82f6';
+            if (pos === 'last') style.borderBottom = '2px solid #3b82f6';
             return style;
           };
 
@@ -1254,8 +1256,8 @@
                           }, header.month)
                         );
                       })(),
-                      React.createElement('th', { className: 'border p-1 text-center bg-gray-200 w-[80px]' }),
-                      React.createElement('th', { className: 'border p-1 text-center bg-gray-200 w-[40px]' })
+                      React.createElement('th', { className: 'border p-1 text-center sticky right-[40px] bg-gray-200 z-20', style: { minWidth: '80px' } }),
+                      React.createElement('th', { className: 'border p-1 text-center sticky right-0 bg-gray-200 z-20', style: { minWidth: '40px' } })
                     ),
                     React.createElement('tr', { className: 'bg-gray-100' },
                       React.createElement('th', { className: 'border p-2 text-center sticky left-0 bg-gray-100 z-20 w-[40px]' }),
@@ -1266,12 +1268,12 @@
                         return React.createElement('th', {
                           key: sprint.name,
                           className: `border p-2 text-center w-[70px] ${inSelectedPI ? 'bg-blue-50' : ''}`,
-                          style: piBorderStyle(sprint.name),
+                          style: piBorderStyle(sprint.name, 'first'),
                           title: sprint.period
                         }, sprint.name);
                       }),
-                      React.createElement('th', { className: 'border p-2 text-center bg-gray-100 w-[80px]' }, 'Total Days'),
-                      React.createElement('th', { className: 'border p-2 text-center bg-gray-100 w-[40px]' }, 'Actions')
+                      React.createElement('th', { className: 'border p-2 text-center sticky right-[40px] bg-gray-100 z-20', style: { minWidth: '80px' } }, 'Total Days'),
+                      React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 z-20', style: { minWidth: '40px' } }, 'Actions')
                     )
                   ),
                   React.createElement('tbody', null,
@@ -1313,7 +1315,7 @@
                           return React.createElement('td', {
                             key: sprint.name,
                             className: `border p-1 ${hasValue ? 'bg-blue-50' : ''}`,
-                            style: piBorderStyle(sprint.name)
+                            style: piBorderStyle(sprint.name, 'middle')
                           },
                             React.createElement('input', {
                               type: 'number',
@@ -1326,10 +1328,10 @@
                             })
                           );
                         }),
-                        React.createElement('td', { className: 'border p-2 text-center font-bold bg-white w-[80px]' },
+                        React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-[40px] bg-white z-10', style: { minWidth: '80px' } },
                           Object.values(item.allocations).reduce((sum, val) => sum + val, 0)
                         ),
-                        React.createElement('td', { className: 'border p-2 text-center bg-white' },
+                        React.createElement('td', { className: 'border p-2 text-center sticky right-0 bg-white z-10', style: { minWidth: '40px' } },
                           React.createElement('button', {
                             onClick: () => removeItem(activeTeam, itemIdx),
                             className: 'p-1 text-red-600 hover:bg-red-50 rounded'
@@ -1342,7 +1344,7 @@
                       React.createElement('td', { className: 'border p-2 sticky left-[40px] bg-blue-50 z-10' }, 'Capacity'),
                       React.createElement('td', { className: 'border p-2 sticky left-[285px] bg-blue-50 z-10' }),
                       team.sprints.map(sprint =>
-                        React.createElement('td', { key: sprint.name, className: 'border p-1 text-center', style: piBorderStyle(sprint.name) },
+                        React.createElement('td', { key: sprint.name, className: 'border p-1 text-center', style: piBorderStyle(sprint.name, 'middle') },
                           React.createElement('input', {
                             type: 'number',
                             min: '0',
@@ -1353,8 +1355,8 @@
                           })
                         )
                       ),
-                      React.createElement('td', { className: 'border p-2 bg-blue-50 w-[80px]' }),
-                      React.createElement('td', { className: 'border p-2 bg-blue-50' })
+                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-blue-50 z-10', style: { minWidth: '80px' } }),
+                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-blue-50 z-10', style: { minWidth: '40px' } })
                     ),
                     React.createElement('tr', { className: 'bg-white font-bold' },
                       React.createElement('td', { className: 'border p-2 sticky left-0 bg-white z-10' }),
@@ -1365,11 +1367,11 @@
                         return React.createElement('td', {
                           key: sprint.name,
                           className: 'border p-2 text-center',
-                          style: piBorderStyle(sprint.name)
+                          style: piBorderStyle(sprint.name, 'middle')
                         }, total);
                       }),
-                      React.createElement('td', { className: 'border p-2 bg-white w-[80px]' }),
-                      React.createElement('td', { className: 'border p-2 bg-white' })
+                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-white z-10', style: { minWidth: '80px' } }),
+                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-white z-10', style: { minWidth: '40px' } })
                     ),
                     React.createElement('tr', { className: 'bg-green-50 font-bold' },
                       React.createElement('td', { className: 'border p-2 sticky left-0 bg-green-50 z-10' }),
@@ -1382,11 +1384,11 @@
                         return React.createElement('td', {
                           key: sprint.name,
                           className: `border p-2 text-center ${isNegative ? 'bg-red-100 text-red-700' : 'bg-green-50'}`,
-                          style: piBorderStyle(sprint.name)
+                          style: piBorderStyle(sprint.name, 'last')
                         }, remaining);
                       }),
-                      React.createElement('td', { className: 'border p-2 bg-green-50 w-[80px]' }),
-                      React.createElement('td', { className: 'border p-2 bg-green-50' })
+                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-green-50 z-10', style: { minWidth: '80px' } }),
+                      React.createElement('td', { className: 'border p-2 sticky right-0 bg-green-50 z-10', style: { minWidth: '40px' } })
                     )
                   )
                 )
