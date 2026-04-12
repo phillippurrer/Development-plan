@@ -18,6 +18,8 @@
       input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
       input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
       .dark table td, .dark table th { border-color: #4b5563; }
+      .sticky-right-border { box-shadow: -1px 0 0 #4b5563; }
+      .dark .sticky-right-border { box-shadow: -1px 0 0 #4b5563; }
       .dark ::-webkit-scrollbar { width: 8px; height: 8px; }
       .dark ::-webkit-scrollbar-track { background: #1f2937; }
       .dark ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
@@ -1316,7 +1318,7 @@
                           }, header.month)
                         );
                       })(),
-                      React.createElement('th', { className: 'border p-1 text-center sticky right-[40px] bg-gray-200 dark:bg-gray-700 z-20', style: { minWidth: '80px' } }),
+                      React.createElement('th', { className: 'border p-1 text-center sticky right-[40px] sticky-right-border bg-gray-200 dark:bg-gray-700 z-20', style: { minWidth: '80px' } }),
                       React.createElement('th', { className: 'border p-1 text-center sticky right-0 bg-gray-200 dark:bg-gray-700 z-20', style: { minWidth: '40px' } })
                     ),
                     React.createElement('tr', { className: 'bg-gray-100 dark:bg-gray-700' },
@@ -1332,7 +1334,7 @@
                           title: sprint.period
                         }, sprint.name);
                       }),
-                      React.createElement('th', { className: 'border p-2 text-center sticky right-[40px] bg-gray-100 dark:bg-gray-700 z-20', style: { minWidth: '80px' } }, 'Total Days'),
+                      React.createElement('th', { className: 'border p-2 text-center sticky right-[40px] sticky-right-border bg-gray-100 dark:bg-gray-700 z-20', style: { minWidth: '80px' } }, 'Total Days'),
                       React.createElement('th', { className: 'border p-2 text-center sticky right-0 bg-gray-100 dark:bg-gray-700 z-20', style: { minWidth: '40px' } }, 'Actions')
                     )
                   ),
@@ -1388,7 +1390,7 @@
                             })
                           );
                         }),
-                        React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-[40px] bg-white dark:bg-gray-800 z-10', style: { minWidth: '80px' } },
+                        React.createElement('td', { className: 'border p-2 text-center font-bold sticky right-[40px] sticky-right-border bg-white dark:bg-gray-800 z-10', style: { minWidth: '80px' } },
                           Object.values(item.allocations).reduce((sum, val) => sum + val, 0)
                         ),
                         React.createElement('td', { className: 'border p-2 text-center sticky right-0 bg-white dark:bg-gray-800 z-10', style: { minWidth: '40px' } },
@@ -1414,7 +1416,7 @@
                           })
                         )
                       ),
-                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-gray-100 dark:bg-gray-700 z-10', style: { minWidth: '80px' } }),
+                      React.createElement('td', { className: 'border p-2 sticky right-[40px] sticky-right-border bg-gray-100 dark:bg-gray-700 z-10', style: { minWidth: '80px' } }),
                       React.createElement('td', { className: 'border p-2 sticky right-0 bg-gray-100 dark:bg-gray-700 z-10', style: { minWidth: '40px' } })
                     ),
                     React.createElement('tr', { className: 'bg-white dark:bg-gray-800 font-bold dark:text-gray-200' },
@@ -1429,7 +1431,7 @@
                           style: piBorderStyle(sprint.name, 'middle')
                         }, total);
                       }),
-                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-white dark:bg-gray-800 z-10', style: { minWidth: '80px' } }),
+                      React.createElement('td', { className: 'border p-2 sticky right-[40px] sticky-right-border bg-white dark:bg-gray-800 z-10', style: { minWidth: '80px' } }),
                       React.createElement('td', { className: 'border p-2 sticky right-0 bg-white dark:bg-gray-800 z-10', style: { minWidth: '40px' } })
                     ),
                     React.createElement('tr', { className: 'bg-green-50 dark:bg-green-900/30 font-bold dark:text-gray-200' },
@@ -1446,7 +1448,7 @@
                           style: piBorderStyle(sprint.name, 'last')
                         }, remaining);
                       }),
-                      React.createElement('td', { className: 'border p-2 sticky right-[40px] bg-green-50 dark:bg-green-900/30 z-10', style: { minWidth: '80px' } }),
+                      React.createElement('td', { className: 'border p-2 sticky right-[40px] sticky-right-border bg-green-50 dark:bg-green-900/30 z-10', style: { minWidth: '80px' } }),
                       React.createElement('td', { className: 'border p-2 sticky right-0 bg-green-50 dark:bg-green-900/30 z-10', style: { minWidth: '40px' } })
                     )
                   )
