@@ -294,7 +294,11 @@
           const [loading, setLoading] = useState(true);
           const [lastSaved, setLastSaved] = useState(null);
           const [syncStatus, setSyncStatus] = useState('disconnected');
-          const [activeTeam, setActiveTeam] = useState('Backend');
+          const urlParams = new URLSearchParams(window.location.search);
+          const [activeTeam, setActiveTeam] = useState(() => {
+            const t = urlParams.get('team');
+            return t || 'Backend';
+          });
           const [showTeamSettings, setShowTeamSettings] = useState(false);
           const [draggedItem, setDraggedItem] = useState(null);
           const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') !== 'false');
@@ -311,7 +315,30 @@
               return next;
             });
           };
-          const [selectedPI, setSelectedPI] = useState(null);
+          const [selectedPI, setSelectedPI] = useState(() => urlParams.get('pi') || null);
+          const [linkCopied, setLinkCopied] = useState(false);
+
+          // Keep URL in sync with current selection
+          useEffect(() => {
+            const params = new URLSearchParams();
+            if (activeTeam && activeTeam !== 'Backend') params.set('team', activeTeam);
+            if (selectedPI) params.set('pi', selectedPI);
+            const qs = params.toString();
+            const newUrl = window.location.pathname + (qs ? '?' + qs : '');
+            window.history.replaceState(null, '', newUrl);
+          }, [activeTeam, selectedPI]);
+
+          const copyDeepLink = () => {
+            const params = new URLSearchParams();
+            if (activeTeam) params.set('team', activeTeam);
+            if (selectedPI) params.set('pi', selectedPI);
+            const qs = params.toString();
+            const url = window.location.origin + window.location.pathname + (qs ? '?' + qs : '');
+            navigator.clipboard.writeText(url).then(() => {
+              setLinkCopied(true);
+              setTimeout(() => setLinkCopied(false), 2000);
+            });
+          };
           const saveTimeoutRef = React.useRef(null);
           const chartInstancesRef = React.useRef({});
           
@@ -1125,6 +1152,17 @@
                 },
                   React.createElement(Settings, { size: 20 }),
                   'Team Settings'
+                ),
+                React.createElement('button', {
+                  onClick: copyDeepLink,
+                  className: `px-4 py-2 ${linkCopied ? 'bg-green-600' : 'bg-indigo-600 hover:bg-indigo-700'} text-white rounded flex items-center gap-2 transition-colors`,
+                  title: 'Copy a shareable link with the current team & PI selection'
+                },
+                  React.createElement('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '2' },
+                    React.createElement('path', { d: 'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71' }),
+                    React.createElement('path', { d: 'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71' })
+                  ),
+                  linkCopied ? 'Link Copied!' : 'Copy Link'
                 ),
                 React.createElement('button', {
                   onClick: exportToCSV,
