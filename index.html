@@ -342,7 +342,7 @@
           const saveTimeoutRef = React.useRef(null);
           const chartInstancesRef = React.useRef({});
           
-          const teamOrder = ['Backend', 'Database', 'Terminal', 'Backoffice', 'Digital', 'Retail'];
+          const teamOrder = ['Backend', 'Database', 'Retail', 'Backoffice', 'Digital'];
 
           const generateSprints = () => {
             const sprintData = [
@@ -430,14 +430,6 @@
               sprints: generateSprints().map(s => ({ ...s, capacity: 130 })),
               developmentItems: sampleBackendData
             },
-            'Terminal': {
-              name: 'Terminal',
-              color: '#ef4444',
-              employees: [{ name: 'Default Team', daysPerWeek: 40 }],
-              defaultCapacity: 80,
-              sprints: generateSprints().map(s => ({ ...s, capacity: 80 })),
-              developmentItems: []
-            },
             'Backoffice': {
               name: 'Backoffice',
               color: '#10b981',
@@ -514,6 +506,8 @@
                       };
                     });
                     // Merge: keep teams from Firebase, add any new teams from initialTeams
+                    // Remove deprecated team names
+                    delete migratedTeams['Terminal'];
                     setTeams(prev => ({ ...prev, ...migratedTeams }));
                   }
                   if (data.lastSaved) setLastSaved(new Date(data.lastSaved));
