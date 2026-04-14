@@ -342,7 +342,7 @@
           const saveTimeoutRef = React.useRef(null);
           const chartInstancesRef = React.useRef({});
           
-          const teamOrder = ['Backend', 'Database', 'Terminal', 'Backoffice', 'Digital'];
+          const teamOrder = ['Backend', 'Database', 'Terminal', 'Backoffice', 'Digital', 'Retail'];
 
           const generateSprints = () => {
             const sprintData = [
@@ -460,6 +460,14 @@
               employees: [{ name: 'Default Team', daysPerWeek: 20 }],
               defaultCapacity: 40,
               sprints: generateSprints().map(s => ({ ...s, capacity: 40 })),
+              developmentItems: []
+            },
+            'Retail': {
+              name: 'Retail',
+              color: '#06b6d4',
+              employees: [{ name: 'Default Team', daysPerWeek: 40 }],
+              defaultCapacity: 80,
+              sprints: generateSprints().map(s => ({ ...s, capacity: 80 })),
               developmentItems: []
             }
           };
