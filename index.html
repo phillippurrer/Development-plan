@@ -513,7 +513,8 @@
                         })
                       };
                     });
-                    setTeams(migratedTeams);
+                    // Merge: keep teams from Firebase, add any new teams from initialTeams
+                    setTeams(prev => ({ ...prev, ...migratedTeams }));
                   }
                   if (data.lastSaved) setLastSaved(new Date(data.lastSaved));
                   setSyncStatus('synced');
