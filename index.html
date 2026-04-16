@@ -1105,7 +1105,7 @@
           const COL_DRAG = 40;
           const COL_COLOR = 40;
           const COL_NAME = 245;
-          const COL_SPRINT = 70;
+          const COL_SPRINT = 50;
           const COL_TOTAL = 80;
           const COL_ACTIONS = 40;
           const LEFT_PINNED = COL_DRAG + COL_COLOR + COL_NAME; // 325 — chart layout.padding.left + Y-axis area
@@ -1382,7 +1382,7 @@
                         const inSelectedPI = selectedPI && selectedPISprintNames.includes(sprint.name);
                         return React.createElement('th', {
                           key: sprint.name,
-                          className: `border p-2 text-center w-[70px] ${inSelectedPI ? 'bg-blue-100 dark:bg-blue-900/40' : ''}`,
+                          className: `border p-2 text-center w-[50px] ${inSelectedPI ? 'bg-blue-100 dark:bg-blue-900/40' : ''}`,
                           style: piBorderStyle(sprint.name, 'first'),
                           title: sprint.period
                         }, sprint.name);
@@ -1663,7 +1663,7 @@
                         const inSelectedPI = selectedPI && selectedPISprintNames.includes(sprint.name);
                         return React.createElement('th', {
                           key: sprint.name,
-                          className: `border p-2 text-center w-[70px] ${inSelectedPI ? 'bg-blue-100 dark:bg-blue-900/40 font-bold' : ''}`,
+                          className: `border p-2 text-center w-[50px] ${inSelectedPI ? 'bg-blue-100 dark:bg-blue-900/40 font-bold' : ''}`,
                           title: sprint.period
                         }, sprint.name);
                       }),
@@ -1715,9 +1715,9 @@
                               const inSelectedPI = selectedPI && selectedPISprintNames.includes(sprint.name);
                               return React.createElement('td', {
                                 key: sprint.name,
-                                className: `border p-2 text-center ${hasValue ? 'font-medium' : ''} ${inSelectedPI ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`,
+                                className: `border p-1 text-center ${hasValue ? 'font-medium' : ''} ${inSelectedPI ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`,
                                 style: {
-                                  width: '70px',
+                                  width: '50px',
                                   backgroundColor: hasValue ? t.color + '15' : 'transparent'
                                 }
                               }, value);
