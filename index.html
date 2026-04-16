@@ -623,9 +623,10 @@
                 borderColor: item.color,
                 borderWidth: 1,
                 stack: 'allocations',
-                // Fill the entire category slot so bar width matches table column width
+                // Each category takes the full column slot (so bar centers on its sprint column),
+                // but barPercentage adds a small gap between adjacent bars
                 categoryPercentage: 1.0,
-                barPercentage: 1.0
+                barPercentage: 0.8
               }));
 
             datasets.push({
@@ -1291,7 +1292,7 @@
             activeTeam !== 'All Teams' ? React.createElement('div', { className: 'bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 mb-3' },
               React.createElement('div', { className: 'mb-2 flex items-start gap-2' },
                 React.createElement('div', { className: 'overflow-x-auto flex-1' },
-                  React.createElement('div', { style: { width: `${totalContentWidth}px`, minWidth: '100%' } },
+                  React.createElement('div', { style: { width: `${totalContentWidth}px` } },
                     // Month header — left/right padding matches the table's pinned columns so months align with sprint groups
                     React.createElement('div', {
                       className: 'flex mb-2',
