@@ -679,11 +679,8 @@
                 scales: {
                   x: {
                     stacked: true,
-                    ticks: {
-                      font: { size: 9 },
-                      color: darkMode ? '#9ca3af' : '#374151'
-                    },
-                    grid: { color: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)' }
+                    display: false, // hide x-axis labels: table header right below already shows sprint names
+                    grid: { display: false }
                   },
                   y: {
                     stacked: true,
@@ -694,14 +691,20 @@
                       color: darkMode ? '#9ca3af' : '#374151'
                     },
                     ticks: { color: darkMode ? '#9ca3af' : '#374151' },
-                    grid: { color: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)' }
+                    grid: { color: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)' },
+                    // Lock the Y-axis area to a fixed width so chart bars align with table sprint columns
+                    afterFit: (scale) => { scale.width = 60; }
                   }
                 },
                 animation: false,
                 layout: {
                   padding: {
-                    right: 10,
-                    top: 18
+                    // LEFT_PINNED_WIDTH (325) - Y_AXIS_AREA_WIDTH (60) = 265
+                    // → plot area starts exactly at x=325, matching the first sprint column of the table
+                    left: 265,
+                    right: 120, // RIGHT_PINNED_WIDTH (Total Days 80 + Actions 40)
+                    top: 18,
+                    bottom: 4
                   }
                 }
               }
@@ -1096,6 +1099,19 @@
           const team = activeTeam !== 'All Teams' ? teams[activeTeam] : null;
           const allSprints = generateSprints();
           const allPIs = generatePIs(allSprints);
+
+          // Layout constants for chart/table horizontal alignment.
+          // Must match the Tailwind w-[Npx] / minWidth values used in the table headers below.
+          const COL_DRAG = 40;
+          const COL_COLOR = 40;
+          const COL_NAME = 245;
+          const COL_SPRINT = 70;
+          const COL_TOTAL = 80;
+          const COL_ACTIONS = 40;
+          const LEFT_PINNED = COL_DRAG + COL_COLOR + COL_NAME; // 325 — chart layout.padding.left + Y-axis area
+          const RIGHT_PINNED = COL_TOTAL + COL_ACTIONS;        // 120 — chart layout.padding.right
+          const sprintsForWidth = team ? team.sprints : allSprints;
+          const totalContentWidth = LEFT_PINNED + sprintsForWidth.length * COL_SPRINT + RIGHT_PINNED;
           const selectedPISprintNames = selectedPI
             ? (allPIs.find(p => p.name === selectedPI)?.sprintNames || [])
             : [];
@@ -1276,56 +1292,51 @@
                 )
               ),
 
-              React.createElement('div', { className: 'mb-6' },
-                React.createElement('div', { className: 'flex items-start gap-4' },
-                  React.createElement('div', { className: 'flex-1 min-w-0' },
-                    React.createElement('div', { className: 'flex items-start mb-2' },
-                      React.createElement('div', { className: 'flex justify-start gap-0', style: { width: '100%' } },
-                        (() => {
-                          let currentMonth = '';
-                          const monthPositions = [];
-                          let startIdx = 0;
+              React.createElement('div', { className: 'mb-6 flex items-start gap-2' },
+                React.createElement('div', { className: 'overflow-x-auto flex-1' },
+                  React.createElement('div', { style: { width: `${totalContentWidth}px`, minWidth: '100%' } },
+                    // Month header — left/right padding matches the table's pinned columns so months align with sprint groups
+                    React.createElement('div', {
+                      className: 'flex mb-2',
+                      style: { paddingLeft: `${LEFT_PINNED}px`, paddingRight: `${RIGHT_PINNED}px` }
+                    },
+                      (() => {
+                        let currentMonth = '';
+                        const monthPositions = [];
+                        let startIdx = 0;
 
-                          team.sprints.forEach((sprint, idx) => {
-                            if (sprint.month !== currentMonth) {
-                              if (currentMonth) {
-                                monthPositions.push({ month: currentMonth, start: startIdx, end: idx - 1 });
-                              }
-                              currentMonth = sprint.month;
-                              startIdx = idx;
+                        team.sprints.forEach((sprint, idx) => {
+                          if (sprint.month !== currentMonth) {
+                            if (currentMonth) {
+                              monthPositions.push({ month: currentMonth, start: startIdx, end: idx - 1 });
                             }
-                            if (idx === team.sprints.length - 1) {
-                              monthPositions.push({ month: currentMonth, start: startIdx, end: idx });
-                            }
-                          });
+                            currentMonth = sprint.month;
+                            startIdx = idx;
+                          }
+                          if (idx === team.sprints.length - 1) {
+                            monthPositions.push({ month: currentMonth, start: startIdx, end: idx });
+                          }
+                        });
 
-                          return monthPositions.map((pos, idx) => {
-                            const width = ((pos.end - pos.start + 1) / team.sprints.length) * 100;
-                            return React.createElement('div', {
-                              key: idx,
-                              style: { width: `${width}%` },
-                              className: 'text-center font-bold text-gray-700 dark:text-gray-300 text-sm'
-                            }, pos.month);
-                          });
-                        })()
-                      )
+                        return monthPositions.map((pos, idx) => {
+                          const width = ((pos.end - pos.start + 1) / team.sprints.length) * 100;
+                          return React.createElement('div', {
+                            key: idx,
+                            style: { width: `${width}%` },
+                            className: 'text-center font-bold text-gray-700 dark:text-gray-300 text-sm'
+                          }, pos.month);
+                        });
+                      })()
                     ),
+                    // Chart canvas — sized to inner div width so each bar sits exactly above its sprint column
                     React.createElement('div', { style: { height: '400px', position: 'relative' }, key: activeTeam },
-                      React.createElement('canvas', { 
+                      React.createElement('canvas', {
                         id: 'single-team-chart',
                         key: `chart-${activeTeam}`
                       })
-                    )
-                  ),
-                  React.createElement('button', {
-                    onClick: () => renderTeamChart(activeTeam),
-                    className: 'px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 h-8 flex-shrink-0'
-                  }, '↻')
-                )
-              ),
-
-              React.createElement('div', { className: 'overflow-x-auto' },
-                React.createElement('table', { className: 'w-full text-sm dark:text-gray-200' },
+                    ),
+                    // Table — flows directly inside the shared scroll wrapper, scrolls in sync with the chart above
+                    React.createElement('table', { className: 'w-full text-sm dark:text-gray-200' },
                   React.createElement('thead', null,
                     React.createElement('tr', { className: 'bg-gray-200 dark:bg-gray-700' },
                       React.createElement('th', { className: 'p-1 text-center sticky left-0 bg-gray-200 dark:bg-gray-700 z-20 w-[40px]' }),
@@ -1495,6 +1506,12 @@
                     )
                   )
                 )
+                  ) // close inner fixed-width div (chart + table share this scroll content)
+                ), // close overflow-x-auto, sibling = refresh button
+                React.createElement('button', {
+                  onClick: () => renderTeamChart(activeTeam),
+                  className: 'px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 h-8 flex-shrink-0'
+                }, '↻')
               ),
 
               React.createElement('button', {
